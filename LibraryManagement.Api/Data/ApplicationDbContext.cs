@@ -11,6 +11,8 @@ namespace LibraryManagement.Api.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Book> Books { get; set; }
+        public DbSet<Author> Authors { get; set; }
+        public DbSet<Category> Categories { get; set; }
         public DbSet<BorrowRequest> BorrowRequests { get; set; }
         public DbSet<Fine> Fines { get; set; }
 
@@ -21,6 +23,10 @@ namespace LibraryManagement.Api.Data
             // User entity configuration
             modelBuilder.Entity<User>()
                 .HasKey(u => u.Id);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Id)
+                .UseIdentityColumn();
 
             modelBuilder.Entity<User>()
                 .Property(u => u.Username)
@@ -44,22 +50,75 @@ namespace LibraryManagement.Api.Data
                 .HasKey(b => b.Id);
 
             modelBuilder.Entity<Book>()
+                .Property(b => b.Id)
+                .UseIdentityColumn();
+
+            modelBuilder.Entity<Book>()
                 .Property(b => b.Title)
                 .IsRequired()
                 .HasMaxLength(200);
 
             modelBuilder.Entity<Book>()
-                .Property(b => b.Author)
+                .Property(b => b.IsDeleted)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<Book>()
+                .Property(b => b.ImageUrl)
+                .HasMaxLength(500); // optional URL to book cover image
+
+            modelBuilder.Entity<Book>()
+                .HasOne(b => b.Author)
+                .WithMany(a => a.Books)
+                .HasForeignKey(b => b.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Book>()
+                .HasOne(b => b.Category)
+                .WithMany(c => c.Books)
+                .HasForeignKey(b => b.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Author entity configuration
+            modelBuilder.Entity<Author>()
+                .HasKey(a => a.Id);
+
+            modelBuilder.Entity<Author>()
+                .Property(a => a.Id)
+                .UseIdentityColumn();
+
+            modelBuilder.Entity<Author>()
+                .Property(a => a.Name)
                 .IsRequired()
                 .HasMaxLength(100);
 
-            modelBuilder.Entity<Book>()
-                .Property(b => b.Category)
+            modelBuilder.Entity<Author>()
+                .Property(a => a.IsDeleted)
+                .HasDefaultValue(false);
+
+            // Category entity configuration
+            modelBuilder.Entity<Category>()
+                .HasKey(c => c.Id);
+
+            modelBuilder.Entity<Category>()
+                .Property(c => c.Id)
+                .UseIdentityColumn();
+
+            modelBuilder.Entity<Category>()
+                .Property(c => c.Name)
+                .IsRequired()
                 .HasMaxLength(100);
+
+            modelBuilder.Entity<Category>()
+                .Property(c => c.IsDeleted)
+                .HasDefaultValue(false);
 
             // BorrowRequest entity configuration
             modelBuilder.Entity<BorrowRequest>()
                 .HasKey(br => br.Id);
+
+            modelBuilder.Entity<BorrowRequest>()
+                .Property(br => br.Id)
+                .UseIdentityColumn();
 
             modelBuilder.Entity<BorrowRequest>()
                 .Property(br => br.Status)
@@ -83,6 +142,10 @@ namespace LibraryManagement.Api.Data
             // Fine entity configuration
             modelBuilder.Entity<Fine>()
                 .HasKey(f => f.Id);
+
+            modelBuilder.Entity<Fine>()
+                .Property(f => f.Id)
+                .UseIdentityColumn();
 
             modelBuilder.Entity<Fine>()
                 .Property(f => f.Amount)

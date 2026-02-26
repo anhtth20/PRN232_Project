@@ -22,11 +22,12 @@ namespace LibraryManagement.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<object>> GetBooks(
             [FromQuery] string? search,
+            [FromQuery] int? categoryId,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string sortBy = "id")
         {
-            var (books, total) = await _bookService.GetBooksAsync(search, pageNumber, pageSize, sortBy);
+            var (books, total) = await _bookService.GetBooksAsync(search, categoryId, pageNumber, pageSize, sortBy);
             return Ok(new { data = books, total, pageNumber, pageSize });
         }
 
@@ -45,8 +46,8 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<ActionResult<BookResponseDto>> CreateBook([FromBody] BookCreateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Author))
-                return BadRequest(new { message = "Title and Author are required" });
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return BadRequest(new { message = "Title is required" });
 
             if (dto.Quantity <= 0)
                 return BadRequest(new { message = "Quantity must be greater than 0" });
@@ -59,8 +60,8 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<ActionResult<BookResponseDto>> UpdateBook(int id, [FromBody] BookUpdateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Author))
-                return BadRequest(new { message = "Title and Author are required" });
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return BadRequest(new { message = "Title is required" });
 
             if (dto.Quantity <= 0)
                 return BadRequest(new { message = "Quantity must be greater than 0" });

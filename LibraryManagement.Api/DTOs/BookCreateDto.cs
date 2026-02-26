@@ -2,9 +2,10 @@ namespace LibraryManagement.Api.DTOs
 {
     public class BookCreateDto
     {
-        public string Title { get; set; } = string.Empty;
-        public string Author { get; set; } = string.Empty;
-        public string? Category { get; set; }
-        public int Quantity { get; set; }
+        public required string Title { get; set; }
+        public required int AuthorId { get; set; }
+        public required int CategoryId { get; set; }
+        public required int Quantity { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

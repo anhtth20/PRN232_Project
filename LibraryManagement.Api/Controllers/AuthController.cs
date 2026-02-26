@@ -27,5 +27,18 @@ namespace LibraryManagement.Api.Controllers
 
             return Ok(new { token });
         }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<object>> Register([FromBody] UserRegisterDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest(new { message = "Username and password are required" });
+
+            var user = await _authService.RegisterAsync(dto.Username, dto.Password, dto.FullName, dto.Email, dto.Role);
+            if (user == null)
+                return BadRequest(new { message = "Username already exists or registration failed" });
+
+            return Ok(new { message = "User registered successfully" });
+        }
     }
 }

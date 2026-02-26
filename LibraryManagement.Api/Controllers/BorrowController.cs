@@ -1,90 +1,90 @@
-using LibraryManagement.Api.DTOs;
-using LibraryManagement.Api.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+// using LibraryManagement.Api.DTOs;
+// using LibraryManagement.Api.Services;
+// using Microsoft.AspNetCore.Authorization;
+// using Microsoft.AspNetCore.Mvc;
+// using System.Security.Claims;
 
-namespace LibraryManagement.Api.Controllers
-{
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class BorrowController : ControllerBase
-    {
-        private readonly IBorrowService _borrowService;
+// namespace LibraryManagement.Api.Controllers
+// {
+//     [ApiController]
+//     [Route("api/[controller]")]
+//     [Authorize]
+//     public class BorrowController : ControllerBase
+//     {
+//         private readonly IBorrowService _borrowService;
 
-        public BorrowController(IBorrowService borrowService)
-        {
-            _borrowService = borrowService;
-        }
+//         public BorrowController(IBorrowService borrowService)
+//         {
+//             _borrowService = borrowService;
+//         }
 
-        [HttpPost]
-        public async Task<ActionResult<BorrowResponseDto>> CreateBorrowRequest([FromBody] BorrowCreateDto dto)
-        {
-            var userIdClaim = User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
-                return Unauthorized(new { message = "User not authenticated" });
+//         [HttpPost]
+//         public async Task<ActionResult<BorrowResponseDto>> CreateBorrowRequest([FromBody] BorrowCreateDto dto)
+//         {
+//             var userIdClaim = User.FindFirst("sub");
+//             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+//                 return Unauthorized(new { message = "User not authenticated" });
 
-            if (dto.DueDate <= DateTime.UtcNow)
-                return BadRequest(new { message = "Due date must be in the future" });
+//             if (dto.DueDate <= DateTime.UtcNow)
+//                 return BadRequest(new { message = "Due date must be in the future" });
 
-            var borrow = await _borrowService.CreateBorrowRequestAsync(userId, dto);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot create borrow request. Book not available or you already have 3 approved books" });
+//             var borrow = await _borrowService.CreateBorrowRequestAsync(userId, dto);
+//             if (borrow == null)
+//                 return BadRequest(new { message = "Cannot create borrow request. Book not available or you already have 3 approved books" });
 
-            return CreatedAtAction(nameof(GetMyBorrows), new { }, borrow);
-        }
+//             return CreatedAtAction(nameof(GetMyBorrows), new { }, borrow);
+//         }
 
-        [HttpGet("my")]
-        public async Task<ActionResult<object>> GetMyBorrows()
-        {
-            var userIdClaim = User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
-                return Unauthorized(new { message = "User not authenticated" });
+//         [HttpGet("my")]
+//         public async Task<ActionResult<object>> GetMyBorrows()
+//         {
+//             var userIdClaim = User.FindFirst("sub");
+//             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+//                 return Unauthorized(new { message = "User not authenticated" });
 
-            var borrows = await _borrowService.GetMyBorrowsAsync(userId);
-            return Ok(new { data = borrows });
-        }
+//             var borrows = await _borrowService.GetMyBorrowsAsync(userId);
+//             return Ok(new { data = borrows });
+//         }
 
-        [HttpGet]
-        [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<object>> GetAllBorrows()
-        {
-            var borrows = await _borrowService.GetAllBorrowsAsync();
-            return Ok(new { data = borrows });
-        }
+//         [HttpGet]
+//         [Authorize(Policy = "LibrarianOnly")]
+//         public async Task<ActionResult<object>> GetAllBorrows()
+//         {
+//             var borrows = await _borrowService.GetAllBorrowsAsync();
+//             return Ok(new { data = borrows });
+//         }
 
-        [HttpPut("{id}/approve")]
-        [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<BorrowResponseDto>> ApproveBorrow(int id)
-        {
-            var borrow = await _borrowService.ApproveBorrowAsync(id);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot approve this borrow request. Invalid status or book not available" });
+//         [HttpPut("{id}/approve")]
+//         [Authorize(Policy = "LibrarianOnly")]
+//         public async Task<ActionResult<BorrowResponseDto>> ApproveBorrow(int id)
+//         {
+//             var borrow = await _borrowService.ApproveBorrowAsync(id);
+//             if (borrow == null)
+//                 return BadRequest(new { message = "Cannot approve this borrow request. Invalid status or book not available" });
 
-            return Ok(borrow);
-        }
+//             return Ok(borrow);
+//         }
 
-        [HttpPut("{id}/reject")]
-        [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<BorrowResponseDto>> RejectBorrow(int id)
-        {
-            var borrow = await _borrowService.RejectBorrowAsync(id);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot reject this borrow request. Invalid status" });
+//         [HttpPut("{id}/reject")]
+//         [Authorize(Policy = "LibrarianOnly")]
+//         public async Task<ActionResult<BorrowResponseDto>> RejectBorrow(int id)
+//         {
+//             var borrow = await _borrowService.RejectBorrowAsync(id);
+//             if (borrow == null)
+//                 return BadRequest(new { message = "Cannot reject this borrow request. Invalid status" });
 
-            return Ok(borrow);
-        }
+//             return Ok(borrow);
+//         }
 
-        [HttpPut("{id}/return")]
-        [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<BorrowResponseDto>> ReturnBorrow(int id)
-        {
-            var borrow = await _borrowService.ReturnBorrowAsync(id);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot return this borrow request. Invalid status" });
+//         [HttpPut("{id}/return")]
+//         [Authorize(Policy = "LibrarianOnly")]
+//         public async Task<ActionResult<BorrowResponseDto>> ReturnBorrow(int id)
+//         {
+//             var borrow = await _borrowService.ReturnBorrowAsync(id);
+//             if (borrow == null)
+//                 return BadRequest(new { message = "Cannot return this borrow request. Invalid status" });
 
-            return Ok(borrow);
-        }
-    }
-}
+//             return Ok(borrow);
+//         }
+//     }
+// }

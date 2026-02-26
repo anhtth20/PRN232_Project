@@ -1,0 +1,39 @@
+.signup-container {
+  min-height: 100vh;
+  background-color: #f0f7ff;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(210, 100%, 90%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(210, 100%, 95%, 1) 0, transparent 50%);
+  display: flex;
+  flex-direction: column;
+}
+
+.signup-header {
+  height: 80px;
+  padding: 0 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+}
+
+.signup-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border: none;
+}
+
+.signup-card-body {
+  padding: 40px 50px;
+}

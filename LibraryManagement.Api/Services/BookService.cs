@@ -7,7 +7,7 @@ namespace LibraryManagement.Api.Services
 {
     public interface IBookService
     {
-        Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int pageNumber = 1, int pageSize = 10, string sortBy = "id");
+        Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int? categoryId = null, int pageNumber = 1, int pageSize = 10, string sortBy = "id");
         Task<BookResponseDto?> GetBookByIdAsync(int id);
         Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto);
         Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto);
@@ -23,13 +23,22 @@ namespace LibraryManagement.Api.Services
             _context = context;
         }
 
-        public async Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int pageNumber = 1, int pageSize = 10, string sortBy = "id")
+        public async Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int? categoryId = null, int pageNumber = 1, int pageSize = 10, string sortBy = "id")
         {
-            var query = _context.Books.AsQueryable();
+            var query = _context.Books
+                .Where(b => !b.IsDeleted)
+                .Include(b => b.Author)
+                .Include(b => b.Category)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(b => b.Title.Contains(search) || b.Author.Contains(search));
+                query = query.Where(b => b.Title.Contains(search) || b.Author.Name.Contains(search));
+            }
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(b => b.CategoryId == categoryId.Value);
             }
 
             var total = await query.CountAsync();
@@ -37,7 +46,7 @@ namespace LibraryManagement.Api.Services
             query = sortBy.ToLower() switch
             {
                 "title" => query.OrderBy(b => b.Title),
-                "author" => query.OrderBy(b => b.Author),
+                "author" => query.OrderBy(b => b.Author.Name),
                 "quantity" => query.OrderBy(b => b.Quantity),
                 _ => query.OrderBy(b => b.Id)
             };
@@ -53,7 +62,10 @@ namespace LibraryManagement.Api.Services
 
         public async Task<BookResponseDto?> GetBookByIdAsync(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books
+                .Include(b => b.Author)
+                .Include(b => b.Category)
+                .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
             return book != null ? MapToDto(book) : null;
         }
 
@@ -62,11 +74,13 @@ namespace LibraryManagement.Api.Services
             var book = new Book
             {
                 Title = dto.Title,
-                Author = dto.Author,
-                Category = dto.Category,
+                AuthorId = dto.AuthorId,
+                CategoryId = dto.CategoryId,
                 Quantity = dto.Quantity,
                 AvailableQuantity = dto.Quantity,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ImageUrl = dto.ImageUrl,
+                IsDeleted = false
             };
 
             _context.Books.Add(book);
@@ -76,14 +90,16 @@ namespace LibraryManagement.Api.Services
 
         public async Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books
+                .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
             if (book == null)
                 return null;
 
             book.Title = dto.Title;
-            book.Author = dto.Author;
-            book.Category = dto.Category;
+            book.AuthorId = dto.AuthorId;
+            book.CategoryId = dto.CategoryId;
             book.Quantity = dto.Quantity;
+            book.ImageUrl = dto.ImageUrl;
 
             _context.Books.Update(book);
             await _context.SaveChangesAsync();
@@ -92,11 +108,13 @@ namespace LibraryManagement.Api.Services
 
         public async Task<bool> DeleteBookAsync(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books
+                .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
             if (book == null)
                 return false;
 
-            _context.Books.Remove(book);
+            book.IsDeleted = true;
+            _context.Books.Update(book);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -107,11 +125,14 @@ namespace LibraryManagement.Api.Services
             {
                 Id = book.Id,
                 Title = book.Title,
-                Author = book.Author,
-                Category = book.Category,
+                AuthorId = book.AuthorId,
+                AuthorName = book.Author?.Name ?? "Unknown Author",
+                CategoryId = book.CategoryId,
+                CategoryName = book.Category?.Name ?? "General",
                 Quantity = book.Quantity,
                 AvailableQuantity = book.AvailableQuantity,
-                CreatedAt = book.CreatedAt
+                CreatedAt = book.CreatedAt,
+                ImageUrl = book.ImageUrl
             };
         }
     }
