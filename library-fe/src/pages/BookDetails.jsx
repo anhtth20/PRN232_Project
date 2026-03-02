@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Button, Row, Col, Typography, Space, Avatar, Divider, message, Breadcrumb, Input, Tag } from 'antd';
+import BorrowModal from '../components/BorrowModal';
 import { 
   ArrowLeftOutlined, 
   UserOutlined, 
@@ -23,6 +24,11 @@ const { Title, Text } = Typography;
 const BookDetails = ({ bookId, onBack }) => {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [borrowModalOpen, setBorrowModalOpen] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [bookId]);
 
   useEffect(() => {
     const fetchBookDetails = async () => {
@@ -128,12 +134,27 @@ const BookDetails = ({ bookId, onBack }) => {
               <Button 
                 type="primary" 
                 className="request-borrow-btn"
-                icon={<BookOutlined />}
                 disabled={book.availableQuantity <= 0}
+                onClick={() => setBorrowModalOpen(true)}
               >
                 Request to Borrow
               </Button>
             </div>
+
+            <BorrowModal
+              open={borrowModalOpen}
+              book={book}
+              onClose={() => setBorrowModalOpen(false)}
+              onSuccess={() => setBorrowModalOpen(false)}
+            />
+
+            {/* Description Section */}
+            {book.description && (
+              <div className="info-section">
+                <Title level={4} className="section-title">Description</Title>
+                <Text className="book-description">{book.description}</Text>
+              </div>
+            )}
 
             {/* Book Information Section */}
             <div className="info-section">

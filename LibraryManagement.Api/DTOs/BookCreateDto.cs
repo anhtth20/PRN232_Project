@@ -6,6 +6,7 @@ namespace LibraryManagement.Api.DTOs
         public required int AuthorId { get; set; }
         public required int CategoryId { get; set; }
         public required int Quantity { get; set; }
+        public string? Description { get; set; }
         public string? ImageUrl { get; set; }
     }
 }

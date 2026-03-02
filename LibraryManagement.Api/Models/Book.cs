@@ -7,6 +7,7 @@ namespace LibraryManagement.Api.Models
         public int Quantity { get; set; }
         public int AvailableQuantity { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? Description { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsDeleted { get; set; } = false;
 

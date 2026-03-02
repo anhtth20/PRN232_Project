@@ -40,23 +40,20 @@
   opacity: 0.1;
 }
 
-.search-box {
+.search-box-wrapper {
   max-width: 600px;
-  margin: 30px auto 0;
-  background: #fff;
-  padding: 8px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 10px;
+  margin: 0 auto;
 }
 
-.search-box input {
-  border: none;
-  flex: 1;
-  padding: 10px 15px;
-  font-size: 16px;
-  outline: none;
+.search-box-wrapper .ant-input-search {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.search-box-wrapper .ant-input-search .ant-input-wrapper {
+  background: #fff;
+  border-radius: 12px;
 }
 
 .category-sidebar {

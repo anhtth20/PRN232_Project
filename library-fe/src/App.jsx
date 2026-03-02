@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -30,6 +30,7 @@ function App() {
 
   const [selectedBookId, setSelectedBookId] = useState(null)
   const [globalSearch, setGlobalSearch] = useState('')
+  const savedScrollY = useRef(0)
 
   const handleLoginSuccess = (token) => {
     try {
@@ -52,9 +53,18 @@ function App() {
   }
 
   const handleBookClick = (id) => {
+    savedScrollY.current = window.scrollY
     setSelectedBookId(id)
     setView('bookdetails')
   }
+
+  const handleBackToList = useCallback(() => {
+    setView('booklist')
+    // Restore scroll after React re-renders the list
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollY.current, behavior: 'instant' })
+    })
+  }, [])
 
   const handleGlobalSearch = (value) => {
     setGlobalSearch(value)
@@ -82,17 +92,18 @@ function App() {
           onSearch={handleGlobalSearch}
           currentView={view}
         >
-          {view === 'booklist' && (
+          {/* Always keep BookList mounted to preserve state; show/hide with CSS */}
+          <div style={{ display: view === 'booklist' ? 'block' : 'none' }}>
             <BookList 
               user={user} 
               onBookClick={handleBookClick}
               externalSearch={globalSearch}
             />
-          )}
+          </div>
           {view === 'bookdetails' && (
             <BookDetails 
               bookId={selectedBookId} 
-              onBack={() => setView('booklist')} 
+              onBack={handleBackToList}
               user={user} 
             />
           )}

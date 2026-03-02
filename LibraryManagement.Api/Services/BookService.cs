@@ -79,6 +79,7 @@ namespace LibraryManagement.Api.Services
                 Quantity = dto.Quantity,
                 AvailableQuantity = dto.Quantity,
                 CreatedAt = DateTime.UtcNow,
+                Description = dto.Description,
                 ImageUrl = dto.ImageUrl,
                 IsDeleted = false
             };
@@ -99,6 +100,7 @@ namespace LibraryManagement.Api.Services
             book.AuthorId = dto.AuthorId;
             book.CategoryId = dto.CategoryId;
             book.Quantity = dto.Quantity;
+            book.Description = dto.Description;
             book.ImageUrl = dto.ImageUrl;
 
             _context.Books.Update(book);
@@ -131,6 +133,7 @@ namespace LibraryManagement.Api.Services
                 CategoryName = book.Category?.Name ?? "General",
                 Quantity = book.Quantity,
                 AvailableQuantity = book.AvailableQuantity,
+                Description = book.Description,
                 CreatedAt = book.CreatedAt,
                 ImageUrl = book.ImageUrl
             };

@@ -295,6 +295,14 @@
   font-weight: 700;
 }
 
+.book-description {
+  display: block;
+  font-size: 16px;
+  color: #475569;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
 /* Footer Styles */
 .lumina-footer {
   background: #f8fafc;

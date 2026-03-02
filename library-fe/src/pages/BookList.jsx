@@ -24,12 +24,18 @@ const BookList = ({ onBookClick, externalSearch }) => {
   const [categories, setCategories] = useState([{ id: null, name: 'All Books', icon: <AppstoreOutlined />, active: true }]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalBooks, setTotalBooks] = useState(0);
+  const pageSize = 8;
 
   // Sync external search from global header
   useEffect(() => {
     if (externalSearch !== undefined) {
       setSearch(externalSearch);
+      setSearchInput(externalSearch);
+      setPage(1); // Reset page on external search
     }
   }, [externalSearch]);
 
@@ -56,30 +62,41 @@ const BookList = ({ onBookClick, externalSearch }) => {
     return <BookOutlined />;
   };
 
-  const fetchBooks = React.useCallback(async () => {
+  const fetchBooks = React.useCallback(async (isLoadMore = false) => {
     try {
       setLoading(true);
-      let url = `http://localhost:5237/api/Books?search=${search}`;
+      const currentPage = isLoadMore ? page + 1 : 1;
+      let url = `http://localhost:5237/api/Books?search=${search}&pageNumber=${currentPage}&pageSize=${pageSize}`;
       if (selectedCategoryId) {
         url += `&categoryId=${selectedCategoryId}`;
       }
       const response = await axios.get(url);
-      setBooks(response.data.data || []);
+      const newBooks = response.data.data || [];
+      
+      if (isLoadMore) {
+        setBooks(prev => [...prev, ...newBooks]);
+        setPage(currentPage);
+      } else {
+        setBooks(newBooks);
+        setPage(1);
+      }
+      setTotalBooks(response.data.total || 0);
     } catch (error) {
       console.error('Error fetching books:', error);
       message.error('Failed to load books');
     } finally {
       setLoading(false);
     }
-  }, [search, selectedCategoryId]);
+  }, [search, selectedCategoryId, page]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
-    fetchBooks();
-  }, [fetchBooks]);
+    // Standard effect for search and category changes (resets list)
+    fetchBooks(false);
+  }, [search, selectedCategoryId]); // Removed fetchBooks from deps to avoid loop with setBooks/setPage
 
   return (
     <div className="booklist-content-only">
@@ -90,16 +107,17 @@ const BookList = ({ onBookClick, externalSearch }) => {
         <Text style={{ color: '#bfdbfe', fontSize: '18px' }}>
           Browse through thousands of titles in our digital catalog.
         </Text>
-        <div className="search-box">
-          <input 
-            type="text" 
-            placeholder="Search by title, author, or ISBN" 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <div className="search-box-wrapper">
+          <Input.Search
+            placeholder="Search by title or author"
+            allowClear
+            enterButton="Search"
+            size="large"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onSearch={(value) => setSearch(value)}
+            style={{ maxWidth: 600, margin: '30px auto 0' }}
           />
-          <Button type="primary" size="large" icon={<SearchOutlined />} style={{ height: '45px', borderRadius: '8px' }} onClick={fetchBooks}>
-            Search
-          </Button>
         </div>
       </div>
 
@@ -114,7 +132,9 @@ const BookList = ({ onBookClick, externalSearch }) => {
                 <div 
                   key={cat.id || 'all'} 
                   className={`category-item ${selectedCategoryId === cat.id ? 'active' : ''}`}
-                  onClick={() => setSelectedCategoryId(cat.id)}
+                  onClick={() => {
+                    setSelectedCategoryId(cat.id);
+                  }}
                 >
                   {cat.icon}
                   <span>{cat.name}</span>
@@ -134,15 +154,15 @@ const BookList = ({ onBookClick, externalSearch }) => {
               {selectedCategoryId ? categories.find(c => c.id === selectedCategoryId)?.name || 'Books' : 'Recommended for You'}
             </Title>
             <Row gutter={[24, 24]}>
-              {loading ? (
-                Array(6).fill(0).map((_, i) => (
-                  <Col xl={8} lg={12} md={12} span={24} key={i}>
+              {loading && books.length === 0 ? (
+                Array(8).fill(0).map((_, i) => (
+                  <Col xl={6} lg={8} md={12} span={24} key={i}>
                     <Card loading />
                   </Col>
                 ))
               ) : books.length > 0 ? (
                 books.map(book => (
-                  <Col xl={8} lg={12} md={12} span={24} key={book.id}>
+                  <Col xl={6} lg={8} md={12} span={24} key={book.id}>
                     <div className="book-card" onClick={() => onBookClick(book.id)} style={{ cursor: 'pointer' }}>
                       <div className="book-cover-wrapper">
                         <img 
@@ -168,9 +188,7 @@ const BookList = ({ onBookClick, externalSearch }) => {
                           >
                             {book.availableQuantity > 0 ? 'Borrow' : 'Waitlist'}
                           </Button>
-                          <div className="bookmark-btn" onClick={(e) => { e.stopPropagation(); console.log('Bookmark', book.id); }}>
-                            <BookOutlined />
-                          </div>
+    
                         </div>
                       </div>
                     </div>
@@ -184,9 +202,14 @@ const BookList = ({ onBookClick, externalSearch }) => {
                 </Col>
               )}
             </Row>
-            {books.length > 0 && (
+            {books.length < totalBooks && (
               <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                <Button size="large" style={{ borderRadius: '10px', height: '45px', padding: '0 40px' }}>
+                <Button 
+                  loading={loading}
+                  onClick={() => fetchBooks(true)}
+                  size="large" 
+                  style={{ borderRadius: '10px', height: '45px', padding: '0 40px' }}
+                >
                   Load More Books
                 </Button>
               </div>
