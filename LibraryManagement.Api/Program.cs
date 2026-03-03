@@ -3,6 +3,7 @@ using LibraryManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace LibraryManagement.Api
@@ -34,7 +35,7 @@ namespace LibraryManagement.Api
                         ValidateAudience = true,
                         ValidAudience = jwtSettings["Audience"],
                         ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero
+                        // ClockSkew = TimeSpan.Zero
                     };
                 });
 
@@ -59,11 +60,13 @@ namespace LibraryManagement.Api
             {
                 options.AddPolicy("AllowFrontend",
                 policy => policy
-                        .WithOrigins("http://localhost:5173")
+                        .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
             });
 
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
             var app = builder.Build();
 
@@ -72,9 +75,8 @@ namespace LibraryManagement.Api
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                app.UseHttpsRedirection();
             }
-
-            app.UseHttpsRedirection();
 
             app.UseCors("AllowFrontend");
 

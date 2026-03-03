@@ -10,6 +10,7 @@ namespace LibraryManagement.Api.Services
         Task<FineResponseDto?> CreateFineAsync(int borrowRequestId, decimal amount);
         Task<IEnumerable<FineResponseDto>> GetMyFinesAsync(int userId);
         Task<IEnumerable<FineResponseDto>> GetAllFinesAsync();
+        Task<FineResponseDto?> GetFineByBorrowIdAsync(int borrowId);
     }
 
     public class FineService : IFineService
@@ -53,6 +54,14 @@ namespace LibraryManagement.Api.Services
         {
             var fines = await _context.Fines.ToListAsync();
             return fines.Select(f => MapToDto(f)).ToList();
+        }
+
+        public async Task<FineResponseDto?> GetFineByBorrowIdAsync(int borrowId)
+        {
+            var fine = await _context.Fines
+                .Where(f => f.BorrowRequestId == borrowId)
+                .FirstOrDefaultAsync();
+            return fine == null ? null : MapToDto(fine);
         }
 
         private static FineResponseDto MapToDto(Fine fine)

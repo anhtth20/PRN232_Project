@@ -13,6 +13,7 @@ namespace LibraryManagement.Api.Services
         Task<BorrowResponseDto?> ApproveBorrowAsync(int borrowId);
         Task<BorrowResponseDto?> RejectBorrowAsync(int borrowId);
         Task<BorrowResponseDto?> ReturnBorrowAsync(int borrowId);
+        Task<BookBorrowStatusDto> GetBookBorrowStatusAsync(int userId, int bookId);
     }
 
     public class BorrowService : IBorrowService
@@ -61,6 +62,7 @@ namespace LibraryManagement.Api.Services
             var borrows = await _context.BorrowRequests
                 .Where(br => br.UserId == userId)
                 .Include(br => br.Book)
+                .ThenInclude(b => b!.Author)
                 .ToListAsync();
 
             return borrows.Select(b => MapToDto(b)).ToList();
@@ -70,6 +72,7 @@ namespace LibraryManagement.Api.Services
         {
             var borrows = await _context.BorrowRequests
                 .Include(br => br.Book)
+                .ThenInclude(b => b!.Author)
                 .ToListAsync();
 
             return borrows.Select(b => MapToDto(b)).ToList();
@@ -144,6 +147,8 @@ namespace LibraryManagement.Api.Services
                 UserId = borrow.UserId,
                 BookId = borrow.BookId,
                 BookTitle = borrow.Book?.Title,
+                AuthorName = borrow.Book?.Author?.Name,
+                ImageUrl = borrow.Book?.ImageUrl,
                 RequestDate = borrow.RequestDate,
                 DueDate = borrow.DueDate,
                 Status = borrow.Status
@@ -152,16 +157,55 @@ namespace LibraryManagement.Api.Services
 
         private async Task<BorrowResponseDto?> MapToDtoAsync(BorrowRequest borrow)
         {
-            var book = await _context.Books.FindAsync(borrow.BookId);
+            var book = await _context.Books
+                .Include(b => b.Author)
+                .FirstOrDefaultAsync(b => b.Id == borrow.BookId);
+
             return new BorrowResponseDto
             {
                 Id = borrow.Id,
                 UserId = borrow.UserId,
                 BookId = borrow.BookId,
                 BookTitle = book?.Title,
+                AuthorName = book?.Author?.Name,
+                ImageUrl = book?.ImageUrl,
                 RequestDate = borrow.RequestDate,
                 DueDate = borrow.DueDate,
                 Status = borrow.Status
+            };
+        }
+
+        public async Task<BookBorrowStatusDto> GetBookBorrowStatusAsync(int userId, int bookId)
+        {
+            // Get the most recent borrow record for this user + book
+            var borrow = await _context.BorrowRequests
+                .Include(br => br.Fines)
+                .Where(br => br.UserId == userId && br.BookId == bookId)
+                .OrderByDescending(br => br.RequestDate)
+                .FirstOrDefaultAsync();
+
+            if (borrow == null)
+                return new BookBorrowStatusDto { Status = null };
+
+            // Approved but past due date → Overdue
+            if (borrow.Status == "Approved" && DateTime.UtcNow > borrow.DueDate)
+            {
+                var fine = borrow.Fines.FirstOrDefault();
+                return new BookBorrowStatusDto
+                {
+                    Status = "Overdue",
+                    BorrowId = borrow.Id,
+                    DueDate = borrow.DueDate,
+                    FineId = fine?.Id,
+                    FineAmount = fine?.Amount
+                };
+            }
+
+            return new BookBorrowStatusDto
+            {
+                Status = borrow.Status,   // Pending | Approved | Rejected | Returned
+                BorrowId = borrow.Id,
+                DueDate = borrow.DueDate
             };
         }
     }

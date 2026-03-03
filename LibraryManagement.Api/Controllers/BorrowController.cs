@@ -2,14 +2,13 @@ using LibraryManagement.Api.DTOs;
 using LibraryManagement.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace LibraryManagement.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class BorrowController : ControllerBase
+    public class BorrowController : BaseController
     {
         private readonly IBorrowService _borrowService;
 
@@ -21,14 +20,14 @@ namespace LibraryManagement.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<BorrowResponseDto>> CreateBorrowRequest([FromBody] BorrowCreateDto dto)
         {
-            var userIdClaim = User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            var userId = GetUserId();
+            if (userId == null)
                 return Unauthorized(new { message = "User not authenticated" });
 
             if (dto.DueDate <= DateTime.UtcNow)
                 return BadRequest(new { message = "Due date must be in the future" });
 
-            var borrow = await _borrowService.CreateBorrowRequestAsync(userId, dto);
+            var borrow = await _borrowService.CreateBorrowRequestAsync(userId.Value, dto);
             if (borrow == null)
                 return BadRequest(new { message = "Cannot create borrow request. Book not available or you already have 3 approved books" });
 
@@ -38,12 +37,23 @@ namespace LibraryManagement.Api.Controllers
         [HttpGet("my")]
         public async Task<ActionResult<object>> GetMyBorrows()
         {
-            var userIdClaim = User.FindFirst("sub");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            var userId = GetUserId();
+            if (userId == null)
                 return Unauthorized(new { message = "User not authenticated" });
 
-            var borrows = await _borrowService.GetMyBorrowsAsync(userId);
+            var borrows = await _borrowService.GetMyBorrowsAsync(userId.Value);
             return Ok(new { data = borrows });
+        }
+
+        [HttpGet("status/{bookId}")]
+        public async Task<ActionResult<BookBorrowStatusDto>> GetBookBorrowStatus(int bookId)
+        {
+            var userId = GetUserId();
+            if (userId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            var status = await _borrowService.GetBookBorrowStatusAsync(userId.Value, bookId);
+            return Ok(status);
         }
 
         [HttpGet]
