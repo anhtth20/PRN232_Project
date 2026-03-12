@@ -66,26 +66,49 @@ const MainLayout = ({ children, user, onLogout, onSearch }) => {
             Browse Books
           </Text>
 
-          {user?.role === 'Borrower' && (
-            <Text
-              onClick={() => navigate('/my-borrowed')}
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: isActive('/my-borrowed') ? '#2563eb' : '#64748b',
-                cursor: 'pointer',
-              }}
-            >
-              My Borrowed
-            </Text>
-          )}
+          <Text
+            onClick={() => navigate('/my-borrowed')}
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: isActive('/my-borrowed') ? '#2563eb' : '#64748b',
+              cursor: 'pointer',
+            }}
+          >
+            My Borrowed
+          </Text>
 
-          <Avatar
+          <Text
+            onClick={() => navigate('/my-fines')}
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: isActive('/my-fines') ? '#2563eb' : '#64748b',
+              cursor: 'pointer',
+            }}
+          >
+            Fines
+          </Text>
+
+          <Text
+            onClick={() => navigate('/profile')}
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: isActive('/profile') ? '#2563eb' : '#64748b',
+              cursor: 'pointer',
+            }}
+          >
+            <Avatar
             icon={<UserOutlined />}
             style={{ backgroundColor: '#fef3c7', color: '#d97706', cursor: 'pointer' }}
+            onClick={() => navigate('/profile')}
           >
             {user?.username?.charAt(0).toUpperCase()}
           </Avatar>
+          </Text>
+
+          
 
           <Button
             type="text"

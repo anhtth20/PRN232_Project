@@ -77,8 +77,29 @@ const BookDetails = ({ bookId, onBack }) => {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 32px' }}>
-        <Skeleton active paragraph={{ rows: 10 }} />
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 32px 64px' }}>
+        <Flex justify="space-between" align="center" style={{ marginBottom: 24 }}>
+          <Skeleton.Input active size="small" style={{ width: 200 }} />
+          <Skeleton.Button active size="small" />
+        </Flex>
+        <Row gutter={[64, 32]}>
+          <Col xl={10} lg={10} md={24}>
+            <Skeleton.Node active style={{ width: '100%', height: 500, borderRadius: 16 }} />
+            <Skeleton.Button active block style={{ marginTop: 16, height: 48, borderRadius: 10 }} />
+          </Col>
+          <Col xl={14} lg={14} md={24}>
+            <Skeleton active paragraph={{ rows: 2 }} title={{ width: '80%' }} />
+            <Space style={{ marginBottom: 28, marginTop: 16 }}>
+              <Skeleton.Button active size="small" style={{ width: 100 }} />
+              <Skeleton.Button active size="small" style={{ width: 140 }} />
+            </Space>
+            <Card style={{ marginBottom: 28, borderRadius: 12 }}>
+              <Skeleton active paragraph={{ rows: 1 }} title={{ width: '40%' }} />
+            </Card>
+            <Skeleton active paragraph={{ rows: 4 }} title />
+            <Skeleton active paragraph={{ rows: 4 }} title style={{ marginTop: 24 }} />
+          </Col>
+        </Row>
       </div>
     );
   }

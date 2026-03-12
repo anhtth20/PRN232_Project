@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 namespace LibraryManagement.Api
 {
@@ -13,6 +14,8 @@ namespace LibraryManagement.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -26,35 +29,64 @@ namespace LibraryManagement.Api
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidateAudience = true,
-                        ValidAudience = jwtSettings["Audience"],
+                        ValidateIssuer = false,
+                        // ValidIssuer = jwtSettings["Issuer"],
+                        ValidateAudience = false,
+                        // ValidAudience = jwtSettings["Audience"],
                         ValidateLifetime = true,
-                        // ClockSkew = TimeSpan.Zero
+                        NameClaimType = "username",
+                        RoleClaimType = "role"
                     };
                 });
 
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("LibrarianOnly", policy =>
-                    policy.RequireClaim("role", "Librarian"));
+                    policy.RequireClaim("role", "Librarian", "Admin", "librarian", "admin"));
             });
 
             // Register Services
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IBookService, BookService>();
+            builder.Services.AddScoped<IAuthorService, AuthorService>();
             builder.Services.AddScoped<IFineService, FineService>();
             builder.Services.AddScoped<IBorrowService, BorrowService>();
+            builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\""
+                });
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
 
             builder.Services.AddCors(options =>
             {
@@ -66,7 +98,7 @@ namespace LibraryManagement.Api
             });
 
 
-            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 
             var app = builder.Build();
 

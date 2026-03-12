@@ -44,6 +44,9 @@ namespace LibraryManagement.Api.Services
         public async Task<IEnumerable<FineResponseDto>> GetMyFinesAsync(int userId)
         {
             var fines = await _context.Fines
+                .Include(f => f.BorrowRequest)
+                .ThenInclude(br => br!.Book)
+                .ThenInclude(b => b!.Author)
                 .Where(f => f.BorrowRequest!.UserId == userId)
                 .ToListAsync();
 
@@ -52,13 +55,20 @@ namespace LibraryManagement.Api.Services
 
         public async Task<IEnumerable<FineResponseDto>> GetAllFinesAsync()
         {
-            var fines = await _context.Fines.ToListAsync();
+            var fines = await _context.Fines
+                .Include(f => f.BorrowRequest)
+                .ThenInclude(br => br!.Book)
+                .ThenInclude(b => b!.Author)
+                .ToListAsync();
             return fines.Select(f => MapToDto(f)).ToList();
         }
 
         public async Task<FineResponseDto?> GetFineByBorrowIdAsync(int borrowId)
         {
             var fine = await _context.Fines
+                .Include(f => f.BorrowRequest)
+                .ThenInclude(br => br!.Book)
+                .ThenInclude(b => b!.Author)
                 .Where(f => f.BorrowRequestId == borrowId)
                 .FirstOrDefaultAsync();
             return fine == null ? null : MapToDto(fine);
@@ -71,7 +81,11 @@ namespace LibraryManagement.Api.Services
                 Id = fine.Id,
                 BorrowRequestId = fine.BorrowRequestId,
                 Amount = fine.Amount,
-                CreatedAt = fine.CreatedAt
+                CreatedAt = fine.CreatedAt,
+                Status = fine.Status,
+                BookId = fine.BorrowRequest?.BookId,
+                BookTitle = fine.BorrowRequest?.Book?.Title,
+                AuthorName = fine.BorrowRequest?.Book?.Author?.Name
             };
         }
     }

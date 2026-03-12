@@ -12,10 +12,12 @@ namespace LibraryManagement.Api.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IBookService _bookService;
+        private readonly IActivityLogService _activityLogService;
 
-        public BooksController(IBookService bookService)
+        public BooksController(IBookService bookService, IActivityLogService activityLogService)
         {
             _bookService = bookService;
+            _activityLogService = activityLogService;
         }
 
         [HttpGet]
@@ -53,6 +55,10 @@ namespace LibraryManagement.Api.Controllers
                 return BadRequest(new { message = "Quantity must be greater than 0" });
 
             var book = await _bookService.CreateBookAsync(dto);
+            
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Added Book", book.Title, userName);
+
             return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, book);
         }
 
@@ -70,6 +76,9 @@ namespace LibraryManagement.Api.Controllers
             if (book == null)
                 return NotFound(new { message = "Book not found" });
 
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Updated Book", book.Title, userName);
+
             return Ok(book);
         }
 
@@ -77,9 +86,13 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<IActionResult> DeleteBook(int id)
         {
+            var book = await _bookService.GetBookByIdAsync(id);
             var result = await _bookService.DeleteBookAsync(id);
             if (!result)
                 return NotFound(new { message = "Book not found" });
+
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Deleted Book", book?.Title ?? $"ID: {id}", userName);
 
             return NoContent();
         }

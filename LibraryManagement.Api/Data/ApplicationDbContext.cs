@@ -15,6 +15,7 @@ namespace LibraryManagement.Api.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<BorrowRequest> BorrowRequests { get; set; }
         public DbSet<Fine> Fines { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -157,6 +158,31 @@ namespace LibraryManagement.Api.Data
                 .WithMany(br => br.Fines)
                 .HasForeignKey(f => f.BorrowRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ActivityLog entity configuration
+            modelBuilder.Entity<ActivityLog>()
+                .HasKey(al => al.Id);
+
+            modelBuilder.Entity<ActivityLog>()
+                .Property(al => al.Id)
+                .UseIdentityColumn();
+
+            modelBuilder.Entity<ActivityLog>()
+                .Property(al => al.Action)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<ActivityLog>()
+                .Property(al => al.Details)
+                .HasMaxLength(200);
+
+            modelBuilder.Entity<ActivityLog>()
+                .Property(al => al.MemberName)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<ActivityLog>()
+                .Property(al => al.Status)
+                .HasMaxLength(50);
         }
     }
 }

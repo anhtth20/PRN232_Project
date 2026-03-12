@@ -2,6 +2,7 @@ using LibraryManagement.Api.DTOs;
 using LibraryManagement.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LibraryManagement.Api.Controllers
 {
@@ -11,10 +12,12 @@ namespace LibraryManagement.Api.Controllers
     public class BorrowController : BaseController
     {
         private readonly IBorrowService _borrowService;
+        private readonly IActivityLogService _activityLogService;
 
-        public BorrowController(IBorrowService borrowService)
+        public BorrowController(IBorrowService borrowService, IActivityLogService activityLogService)
         {
             _borrowService = borrowService;
+            _activityLogService = activityLogService;
         }
 
         [HttpPost]
@@ -30,6 +33,9 @@ namespace LibraryManagement.Api.Controllers
             var borrow = await _borrowService.CreateBorrowRequestAsync(userId.Value, dto);
             if (borrow == null)
                 return BadRequest(new { message = "Cannot create borrow request. Book not available or you already have 3 approved books" });
+
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Requested Borrow", $"Book ID: {dto.BookId}", userName);
 
             return CreatedAtAction(nameof(GetMyBorrows), new { }, borrow);
         }
@@ -72,6 +78,9 @@ namespace LibraryManagement.Api.Controllers
             if (borrow == null)
                 return BadRequest(new { message = "Cannot approve this borrow request. Invalid status or book not available" });
 
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Approved Borrow", borrow.BookTitle, $"User {borrow.UserId}");
+
             return Ok(borrow);
         }
 
@@ -93,6 +102,9 @@ namespace LibraryManagement.Api.Controllers
             var borrow = await _borrowService.ReturnBorrowAsync(id);
             if (borrow == null)
                 return BadRequest(new { message = "Cannot return this borrow request. Invalid status" });
+
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Returned Book", borrow.BookTitle, $"User {borrow.UserId}");
 
             return Ok(borrow);
         }

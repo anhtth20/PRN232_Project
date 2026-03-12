@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, Table, Tabs, Card, Statistic, Tag, Button, 
-  Space, Row, Col, Input, Pagination, App, Flex, Avatar, Badge
+  Space, Row, Col, Input, Pagination, App, Flex, Avatar, Badge, Skeleton
 } from 'antd';
 import {
   BookOutlined,
@@ -179,32 +179,36 @@ const MyBorrowed = () => {
       <Row gutter={24} style={{ marginBottom: 40 }}>
         <Col span={6}>
           <Card bordered={false} styles={{ body: { padding: 24 } }} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <Flex align="center" gap={16}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BookOutlined style={{ fontSize: 24, color: '#3b82f6' }} />
-              </div>
-              <Statistic 
-                title={<Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Currently Reading</Text>} 
-                value={currentlyReadingCount} 
-                suffix="Books"
-                valueStyle={{ fontSize: 24, fontWeight: 700 }}
-              />
-            </Flex>
+            <Skeleton loading={loading} active avatar={{ shape: 'square', size: 48 }} title={false} paragraph={{ rows: 2, width: ['100%', '50%'] }}>
+              <Flex align="center" gap={16}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BookOutlined style={{ fontSize: 24, color: '#3b82f6' }} />
+                </div>
+                <Statistic 
+                  title={<Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Currently Reading</Text>} 
+                  value={currentlyReadingCount} 
+                  suffix="Books"
+                  valueStyle={{ fontSize: 24, fontWeight: 700 }}
+                />
+              </Flex>
+            </Skeleton>
           </Card>
         </Col>
         <Col span={6}>
           <Card bordered={false} styles={{ body: { padding: 24 } }} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <Flex align="center" gap={16}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CalendarOutlined style={{ fontSize: 24, color: '#f97316' }} />
-              </div>
-              <Statistic 
-                title={<Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Due This Week</Text>} 
-                value={dueThisWeekCount} 
-                suffix={dueThisWeekCount === 1 ? "Book" : "Books"}
-                valueStyle={{ fontSize: 24, fontWeight: 700 }}
-              />
-            </Flex>
+            <Skeleton loading={loading} active avatar={{ shape: 'square', size: 48 }} title={false} paragraph={{ rows: 2, width: ['100%', '50%'] }}>
+              <Flex align="center" gap={16}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CalendarOutlined style={{ fontSize: 24, color: '#f97316' }} />
+                </div>
+                <Statistic 
+                  title={<Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Due This Week</Text>} 
+                  value={dueThisWeekCount} 
+                  suffix={dueThisWeekCount === 1 ? "Book" : "Books"}
+                  valueStyle={{ fontSize: 24, fontWeight: 700 }}
+                />
+              </Flex>
+            </Skeleton>
           </Card>
         </Col>
       </Row>
