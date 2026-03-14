@@ -49,5 +49,27 @@ namespace LibraryManagement.Api.Controllers
 
             return Ok(fine);
         }
+
+        [HttpPut("{id}/status")]
+        [Authorize(Policy = "LibrarianOnly")]
+        public async Task<IActionResult> UpdateFineStatus(int id, [FromBody] string status)
+        {
+            var result = await _fineService.UpdateFineStatusAsync(id, status);
+            if (!result)
+                return NotFound(new { message = "Fine not found" });
+
+            return NoContent();
+        }
+
+        [HttpPost]
+        [Authorize(Policy = "LibrarianOnly")]
+        public async Task<ActionResult<FineResponseDto>> CreateFine(FineCreateDto dto)
+        {
+            var fine = await _fineService.CreateFineAsync(dto.BorrowRequestId, dto.Amount, dto.Reason);
+            if (fine == null)
+                return BadRequest(new { message = "Failed to create fine. Borrow request may not exist." });
+
+            return Ok(fine);
+        }
     }
 }

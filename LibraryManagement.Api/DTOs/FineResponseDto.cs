@@ -7,6 +7,7 @@ namespace LibraryManagement.Api.DTOs
         public decimal Amount { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
         public int? BookId { get; set; }
         public string? BookTitle { get; set; }
         public string? AuthorName { get; set; }

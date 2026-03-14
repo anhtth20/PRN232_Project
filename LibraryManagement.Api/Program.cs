@@ -15,7 +15,6 @@ namespace LibraryManagement.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -34,11 +33,12 @@ namespace LibraryManagement.Api
                     {
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = false,
-                        // ValidIssuer = jwtSettings["Issuer"],
-                        ValidateAudience = false,
-                        // ValidAudience = jwtSettings["Audience"],
+                        ValidateIssuer = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidateAudience = true,
+                        ValidAudience = jwtSettings["Audience"],
                         ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero,
                         NameClaimType = "username",
                         RoleClaimType = "role"
                     };
@@ -47,7 +47,7 @@ namespace LibraryManagement.Api
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("LibrarianOnly", policy =>
-                    policy.RequireClaim("role", "Librarian", "Admin", "librarian", "admin"));
+                    policy.RequireRole("Librarian", "Admin", "librarian", "admin"));
             });
 
             // Register Services
@@ -57,6 +57,7 @@ namespace LibraryManagement.Api
             builder.Services.AddScoped<IFineService, FineService>();
             builder.Services.AddScoped<IBorrowService, BorrowService>();
             builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -102,14 +103,19 @@ namespace LibraryManagement.Api
 
             var app = builder.Build();
 
+            // Ensure upload directory exists
+            var uploadsPath = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "books");
+            Directory.CreateDirectory(uploadsPath);
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-                app.UseHttpsRedirection();
+                // app.UseHttpsRedirection();
             }
 
+            app.UseStaticFiles();
             app.UseCors("AllowFrontend");
 
             app.UseAuthentication();

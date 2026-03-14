@@ -85,8 +85,16 @@ namespace LibraryManagement.Api.Services
         public async Task<bool> DeleteCategoryAsync(int id)
         {
             var category = await _context.Categories
+                .Include(c => c.Books)
                 .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+            
             if (category == null) return false;
+
+            // Prevent deletion if books are linked
+            if (category.Books.Any(b => !b.IsDeleted))
+            {
+                throw new InvalidOperationException("Cannot delete category with linked books.");
+            }
 
             category.IsDeleted = true;
             await _context.SaveChangesAsync();

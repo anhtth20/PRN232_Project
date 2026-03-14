@@ -79,7 +79,7 @@ namespace LibraryManagement.Api.Controllers
                 return BadRequest(new { message = "Cannot approve this borrow request. Invalid status or book not available" });
 
             var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Approved Borrow", borrow.BookTitle, $"User {borrow.UserId}");
+            await _activityLogService.LogActivityAsync("Approved Borrow", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
 
             return Ok(borrow);
         }
@@ -104,7 +104,7 @@ namespace LibraryManagement.Api.Controllers
                 return BadRequest(new { message = "Cannot return this borrow request. Invalid status" });
 
             var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Returned Book", borrow.BookTitle, $"User {borrow.UserId}");
+            await _activityLogService.LogActivityAsync("Returned Book", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
 
             return Ok(borrow);
         }

@@ -19,6 +19,13 @@ import axios from 'axios';
 
 const { Title, Text } = Typography;
 
+const API_BASE = 'http://localhost:5237';
+const resolveImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+};
+
 const BookDetails = ({ bookId, onBack }) => {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -119,13 +126,28 @@ const BookDetails = ({ bookId, onBack }) => {
     );
   }
 
-  const isAvailable = book.availableQuantity > 0;
+  const isAvailable = book.availableQuantity > 0 && !book.isDeleted;
   const status = borrowStatus?.status ?? null; // null | "Pending" | "Approved" | "Overdue" | "Returned" | "Rejected"
 
   /** Renders the appropriate CTA inside the borrow card */
   const renderBorrowCTA = () => {
     if (borrowStatusLoading) {
       return <Button type="primary" size="large" loading style={{ minWidth: 160, fontWeight: 600 }}>Loading…</Button>;
+    }
+
+    // If book is deleted/archived
+    if (book.isDeleted) {
+      return (
+        <Button
+          type="default"
+          size="large"
+          disabled
+          icon={<ExclamationCircleFilled style={{ color: '#ef4444' }} />}
+          style={{ fontWeight: 600, minWidth: 160, cursor: 'not-allowed' }}
+        >
+          Out of Stock
+        </Button>
+      );
     }
 
     // Overdue – user must pay fine first
@@ -246,6 +268,8 @@ const BookDetails = ({ bookId, onBack }) => {
 
   /** Subtitle text below the CTA card description */
   const renderCTASubtext = () => {
+    if (book.isDeleted) 
+      return "This book has been archived and is no longer available for borrowing.";
     if (status === 'Pending')
       return "Your borrow request is under review. You'll be notified once approved.";
     if (status === 'Approved')
@@ -276,31 +300,31 @@ const BookDetails = ({ bookId, onBack }) => {
         <Col xl={10} lg={10} md={24}>
           <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
             <img
-              src={book.imageUrl || 'https://via.placeholder.com/400x600?text=No+Cover'}
+              src={resolveImageUrl(book.imageUrl) || 'https://placehold.co/400x600?text=No+Cover'}
               alt={book.title}
               style={{ width: '100%', display: 'block', objectFit: 'cover' }}
             />
           </div>
-          <Flex
-            align="center"
-            justify="center"
-            gap={8}
-            style={{
-              marginTop: 16,
-              padding: '12px 20px',
-              borderRadius: 10,
-              background: isAvailable ? '#f0fdf4' : '#fef2f2',
-              border: `1px solid ${isAvailable ? '#bbf7d0' : '#fecaca'}`,
-              fontWeight: 700,
-              fontSize: 15,
-              color: isAvailable ? '#15803d' : '#b91c1c',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {isAvailable ? <CheckCircleFilled /> : <ExclamationCircleFilled />}
-            {isAvailable ? 'Available Now' : 'On Loan'}
-          </Flex>
+            <Flex
+              align="center"
+              justify="center"
+              gap={8}
+              style={{
+                marginTop: 16,
+                padding: '12px 20px',
+                borderRadius: 10,
+                background: book.isDeleted ? '#fef2f2' : (isAvailable ? '#f0fdf4' : '#fcfaff'),
+                border: `1px solid ${book.isDeleted ? '#fecaca' : (isAvailable ? '#bbf7d0' : '#e2e8f0')}`,
+                fontWeight: 700,
+                fontSize: 15,
+                color: book.isDeleted ? '#ef4444' : (isAvailable ? '#15803d' : '#64748b'),
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {book.isDeleted || !isAvailable ? <ExclamationCircleFilled /> : <CheckCircleFilled />}
+              {book.isDeleted ? 'Out of Stock' : (isAvailable ? 'Available Now' : 'Currently On Loan')}
+            </Flex>
           <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: 8, fontSize: 13 }}>
             Reference ID: LIB-{book.id}
           </Text>

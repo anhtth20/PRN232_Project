@@ -131,7 +131,7 @@ namespace LibraryManagement.Api.Services
             {
                 var daysLate = (int)(DateTime.UtcNow - borrow.DueDate).TotalDays;
                 var fineAmount = daysLate * 5000m;
-                await _fineService.CreateFineAsync(borrowId, fineAmount);
+                await _fineService.CreateFineAsync(borrowId, fineAmount, "Late return");
             }
 
             await _context.SaveChangesAsync();

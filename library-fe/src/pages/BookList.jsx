@@ -16,6 +16,13 @@ import axios from 'axios';
 
 const { Title, Text } = Typography;
 
+const API_BASE = 'http://localhost:5237';
+const resolveImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+};
+
 const getCategoryIcon = (name) => {
   const n = name.toLowerCase();
   if (n.includes('fiction')) return <BookOutlined />;
@@ -191,7 +198,7 @@ const BookList = ({ onBookClick, externalSearch }) => {
                       cover={
                         <div style={{ position: 'relative', paddingTop: '140%', background: '#f1f5f9' }}>
                           <img
-                            src={book.imageUrl || 'https://via.placeholder.com/300x450?text=No+Cover'}
+                            src={resolveImageUrl(book.imageUrl) || 'https://placehold.co/300x450?text=No+Cover'}
                             alt={book.title}
                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                           />

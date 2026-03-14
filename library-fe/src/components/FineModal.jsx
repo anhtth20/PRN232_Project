@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Button, Typography, Flex, Card, App } from 'antd';
+import { formatCurrency } from '../utils/format';
 import {
   WarningFilled,
   CalendarOutlined,
@@ -16,7 +17,7 @@ const FineModal = ({ open, onClose, borrowStatus }) => {
     if (open && borrowStatus?.fineAmount != null) {
       notification.warning({
         message: 'Overdue Fine',
-        description: `You have an outstanding fine of ${Number(borrowStatus.fineAmount).toLocaleString('vi-VN')} VND for this book. Please settle it as soon as possible.`,
+        description: `You have an outstanding fine of ${formatCurrency(borrowStatus.fineAmount)} for this book. Please settle it as soon as possible.`,
         duration: 6,
         placement: 'topRight',
       });
@@ -26,8 +27,7 @@ const FineModal = ({ open, onClose, borrowStatus }) => {
 
   if (!borrowStatus) return null;
 
-  const formatted = (amount) =>
-    `${Number(amount).toLocaleString('vi-VN')} VND`;
+  const formatted = (amount) => formatCurrency(amount);
 
   const formatDate = (dateStr) =>
     dateStr ? new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -135,7 +135,7 @@ const FineModal = ({ open, onClose, borrowStatus }) => {
       </Flex>
 
       <Text type="secondary" style={{ display: 'block', marginTop: 18, fontSize: 12, lineHeight: 1.6 }}>
-        Please contact the librarian to settle your fine. Fine rate: <strong>5,000 VND / day late</strong>.
+        Please contact the librarian to settle your fine. Fine rate: <strong>{formatCurrency(5000)} / day late</strong>.
       </Text>
     </Modal>
   );

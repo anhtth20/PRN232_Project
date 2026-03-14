@@ -29,7 +29,7 @@ namespace LibraryManagement.Api.Controllers
             var totalBooks = await _context.Books.SumAsync(b => b.Quantity);
             var activeBorrows = await _context.BorrowRequests.CountAsync(br => br.Status == "Approved");
             var overdueBooks = await _context.BorrowRequests.CountAsync(br => br.Status == "Approved" && br.DueDate < DateTime.UtcNow);
-            var pendingFinesSum = await _context.Fines.Where(f => f.Status == "Pending").SumAsync(f => (decimal?)f.Amount) ?? 0;
+            var pendingFinesSum = await _context.Fines.Where(f => f.Status == "Unpaid").SumAsync(f => (decimal?)f.Amount) ?? 0;
 
             // Generate borrowing trends for the last 7 days
             var rawTrends = await _context.BorrowRequests

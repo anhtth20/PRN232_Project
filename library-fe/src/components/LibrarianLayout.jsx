@@ -25,6 +25,7 @@ const LibrarianLayout = ({ children, user }) => {
     if (path.includes('/librarian/authors')) return 'authors';
     if (path.includes('/librarian/borrowers')) return 'borrowers';
     if (path.includes('/librarian/fines')) return 'fines';
+    if (path.includes('/librarian/categories')) return 'categories';
     if (path === '/librarian') return 'dashboard';
     return '';
   };
@@ -43,8 +44,7 @@ const LibrarianLayout = ({ children, user }) => {
     {
       key: 'categories',
       icon: <TagsFilled />,
-      label: 'Manage Categories', // Note: Dummy route right now
-      disabled: true // Disable if no page
+      label: 'Manage Categories',
     },
     {
       key: 'authors',

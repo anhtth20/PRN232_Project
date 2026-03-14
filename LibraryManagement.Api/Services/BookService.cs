@@ -9,8 +9,8 @@ namespace LibraryManagement.Api.Services
     {
         Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int? categoryId = null, int pageNumber = 1, int pageSize = 10, string sortBy = "id");
         Task<BookResponseDto?> GetBookByIdAsync(int id);
-        Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto);
-        Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto);
+        Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto, string? imageUrl = null);
+        Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null);
         Task<bool> DeleteBookAsync(int id);
     }
 
@@ -65,11 +65,11 @@ namespace LibraryManagement.Api.Services
             var book = await _context.Books
                 .Include(b => b.Author)
                 .Include(b => b.Category)
-                .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
+                .FirstOrDefaultAsync(b => b.Id == id); // Allow fetching even if IsDeleted
             return book != null ? MapToDto(book) : null;
         }
 
-        public async Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto)
+        public async Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto, string? imageUrl = null)
         {
             var book = new Book
             {
@@ -80,18 +80,25 @@ namespace LibraryManagement.Api.Services
                 AvailableQuantity = dto.Quantity,
                 CreatedAt = DateTime.UtcNow,
                 Description = dto.Description,
-                ImageUrl = dto.ImageUrl,
+                ImageUrl = imageUrl,
                 IsDeleted = false
             };
 
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
+
+            // Reload with navigation properties
+            await _context.Entry(book).Reference(b => b.Author).LoadAsync();
+            await _context.Entry(book).Reference(b => b.Category).LoadAsync();
+
             return MapToDto(book);
         }
 
-        public async Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto)
+        public async Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null)
         {
             var book = await _context.Books
+                .Include(b => b.Author)
+                .Include(b => b.Category)
                 .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
             if (book == null)
                 return null;
@@ -101,10 +108,17 @@ namespace LibraryManagement.Api.Services
             book.CategoryId = dto.CategoryId;
             book.Quantity = dto.Quantity;
             book.Description = dto.Description;
-            book.ImageUrl = dto.ImageUrl;
+            // Only update image if a new one was uploaded
+            if (imageUrl != null)
+                book.ImageUrl = imageUrl;
 
             _context.Books.Update(book);
             await _context.SaveChangesAsync();
+
+            // Reload navigation properties
+            await _context.Entry(book).Reference(b => b.Author).LoadAsync();
+            await _context.Entry(book).Reference(b => b.Category).LoadAsync();
+
             return MapToDto(book);
         }
 
@@ -135,7 +149,8 @@ namespace LibraryManagement.Api.Services
                 AvailableQuantity = book.AvailableQuantity,
                 Description = book.Description,
                 CreatedAt = book.CreatedAt,
-                ImageUrl = book.ImageUrl
+                ImageUrl = book.ImageUrl,
+                IsDeleted = book.IsDeleted
             };
         }
     }

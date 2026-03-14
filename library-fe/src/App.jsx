@@ -15,6 +15,7 @@ import LibrarianAuthors from './pages/librarian/LibrarianAuthors'
 import LibrarianBooks from './pages/librarian/LibrarianBooks'
 import LibrarianBorrowers from './pages/librarian/LibrarianBorrowers'
 import LibrarianFines from './pages/librarian/LibrarianFines'
+import LibrarianCategories from './pages/librarian/LibrarianCategories'
 
 const RoleRoute = ({ children, allowedRole, user }) => {
   if (!user) {
@@ -197,6 +198,14 @@ function AppContent() {
         <RoleRoute user={user} allowedRole="librarian">
           <LibrarianLayout user={user}>
             <LibrarianFines />
+          </LibrarianLayout>
+        </RoleRoute>
+      } />
+
+      <Route path="/librarian/categories" element={
+        <RoleRoute user={user} allowedRole="librarian">
+          <LibrarianLayout user={user}>
+            <LibrarianCategories />
           </LibrarianLayout>
         </RoleRoute>
       } />

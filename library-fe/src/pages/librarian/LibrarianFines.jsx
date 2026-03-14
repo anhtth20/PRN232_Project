@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Typography, Input, Select, Table, Space, 
-  Card, Row, Col, Flex, Tag, Pagination, App
+  Card, Row, Col, Flex, Tag, Pagination, App, Button
 } from 'antd';
 import { 
   SearchOutlined, FilterOutlined, 
   DollarOutlined, LineChartOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import api from '../../api';
+import { formatCurrency } from '../../utils/format';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -41,9 +42,23 @@ const LibrarianFines = () => {
       
       setData(fines);
     } catch (error) {
+      console.error('Error fetching fines:', error);
       message.error('Failed to load fines');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await api.put(`/Fines/${id}/status`, newStatus, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      message.success(`Status updated to ${newStatus}`);
+      fetchFines();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      message.error('Failed to update status');
     }
   };
 
@@ -90,7 +105,7 @@ const LibrarianFines = () => {
       dataIndex: 'amount',
       key: 'amount',
       render: (amount) => (
-        <Text strong style={{ color: '#0f172a' }}>${parseFloat(amount || 0).toFixed(2)}</Text>
+        <Text strong style={{ color: '#0f172a' }}>{formatCurrency(amount)}</Text>
       ),
     },
     {
@@ -98,6 +113,34 @@ const LibrarianFines = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => getStatusTag(status),
+    },
+    {
+      title: 'REASON',
+      dataIndex: 'reason',
+      key: 'reason',
+      render: (text) => <Text style={{ color: '#64748b', fontSize: 13 }}>{text || '-'}</Text>,
+    },
+    {
+      title: 'ACTIONS',
+      key: 'actions',
+      align: 'right',
+      render: (_, record) => (
+        <Button 
+          type="primary" 
+          size="small"
+          onClick={() => handleStatusChange(record.id, record.status === 'Paid' ? 'Unpaid' : 'Paid')}
+          style={{ 
+            borderRadius: 6, 
+            fontSize: 12, 
+            fontWeight: 600,
+            background: record.status === 'Paid' ? '#f1f5f9' : '#1b80f8',
+            color: record.status === 'Paid' ? '#475569' : '#ffffff',
+            border: 'none'
+          }}
+        >
+          {record.status === 'Paid' ? 'Mark as Unpaid' : 'Mark as Paid'}
+        </Button>
+      ),
     }
   ];
 
@@ -192,7 +235,7 @@ const LibrarianFines = () => {
             <Flex justify="space-between" align="flex-start">
               <Space direction="vertical" size={4}>
                 <Text style={{ color: '#b91c1c', fontWeight: 700, fontSize: 12, letterSpacing: '0.05em' }}>TOTAL UNPAID FINES</Text>
-                <Title level={2} style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>${totalUnpaid.toFixed(2)}</Title>
+                <Title level={2} style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{formatCurrency(totalUnpaid)}</Title>
               </Space>
               <DollarOutlined style={{ fontSize: 32, color: '#fca5a5' }} />
             </Flex>
@@ -203,7 +246,7 @@ const LibrarianFines = () => {
             <Flex justify="space-between" align="flex-start">
               <Space direction="vertical" size={4}>
                 <Text style={{ color: '#15803d', fontWeight: 700, fontSize: 12, letterSpacing: '0.05em' }}>TOTAL PAID</Text>
-                <Title level={2} style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>${totalPaid.toFixed(2)}</Title>
+                <Title level={2} style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{formatCurrency(totalPaid)}</Title>
               </Space>
               <LineChartOutlined style={{ fontSize: 32, color: '#86efac' }} />
             </Flex>

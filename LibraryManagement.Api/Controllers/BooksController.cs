@@ -13,11 +13,13 @@ namespace LibraryManagement.Api.Controllers
     {
         private readonly IBookService _bookService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IWebHostEnvironment _env;
 
-        public BooksController(IBookService bookService, IActivityLogService activityLogService)
+        public BooksController(IBookService bookService, IActivityLogService activityLogService, IWebHostEnvironment env)
         {
             _bookService = bookService;
             _activityLogService = activityLogService;
+            _env = env;
         }
 
         [HttpGet]
@@ -46,7 +48,8 @@ namespace LibraryManagement.Api.Controllers
 
         [HttpPost]
         [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<BookResponseDto>> CreateBook([FromBody] BookCreateDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<BookResponseDto>> CreateBook([FromForm] BookCreateDto dto, IFormFile? imageFile)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
                 return BadRequest(new { message = "Title is required" });
@@ -54,17 +57,26 @@ namespace LibraryManagement.Api.Controllers
             if (dto.Quantity <= 0)
                 return BadRequest(new { message = "Quantity must be greater than 0" });
 
-            var book = await _bookService.CreateBookAsync(dto);
-            
+            string? imageUrl = null;
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                imageUrl = await SaveBookImageAsync(imageFile);
+                if (imageUrl == null)
+                    return BadRequest(new { message = "Invalid image file. Only JPG, JPEG, PNG, GIF, and WEBP are allowed." });
+            }
+
+            var book = await _bookService.CreateBookAsync(dto, imageUrl);
+
             var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Added Book", book.Title, userName);
+            await _activityLogService.LogActivityAsync("Added Book", book!.Title, userName);
 
             return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, book);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "LibrarianOnly")]
-        public async Task<ActionResult<BookResponseDto>> UpdateBook(int id, [FromBody] BookUpdateDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<BookResponseDto>> UpdateBook(int id, [FromForm] BookUpdateDto dto, IFormFile? imageFile)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
                 return BadRequest(new { message = "Title is required" });
@@ -72,7 +84,15 @@ namespace LibraryManagement.Api.Controllers
             if (dto.Quantity <= 0)
                 return BadRequest(new { message = "Quantity must be greater than 0" });
 
-            var book = await _bookService.UpdateBookAsync(id, dto);
+            string? imageUrl = null;
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                imageUrl = await SaveBookImageAsync(imageFile);
+                if (imageUrl == null)
+                    return BadRequest(new { message = "Invalid image file. Only JPG, JPEG, PNG, GIF, and WEBP are allowed." });
+            }
+
+            var book = await _bookService.UpdateBookAsync(id, dto, imageUrl);
             if (book == null)
                 return NotFound(new { message = "Book not found" });
 
@@ -95,6 +115,30 @@ namespace LibraryManagement.Api.Controllers
             await _activityLogService.LogActivityAsync("Deleted Book", book?.Title ?? $"ID: {id}", userName);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Saves an uploaded image file to wwwroot/uploads/books/ and returns the relative URL.
+        /// Returns null if the file type is not allowed.
+        /// </summary>
+        private async Task<string?> SaveBookImageAsync(IFormFile file)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+                return null;
+
+            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRoot, "uploads", "books");
+            Directory.CreateDirectory(uploadDir);
+
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadDir, fileName);
+
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            return $"/uploads/books/{fileName}";
         }
     }
 }

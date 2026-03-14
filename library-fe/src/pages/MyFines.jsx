@@ -15,8 +15,9 @@ import {
   BookOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
+import { formatCurrency } from '../utils/format';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -39,9 +40,7 @@ const MyFines = () => {
 
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5237/api/Fines/my', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/Fines/my');
       setFines(res.data.data || []);
     } catch (error) {
       console.error('Fetch fines error:', error);
@@ -57,7 +56,7 @@ const MyFines = () => {
     }
   };
 
-  const pendingFines = fines.filter(f => f.status === 'Pending');
+  const pendingFines = fines.filter(f => f.status === 'Unpaid');
   const totalPendingAmount = pendingFines.reduce((sum, f) => sum + f.amount, 0);
   const pendingCount = pendingFines.length;
 
@@ -99,7 +98,7 @@ const MyFines = () => {
       key: 'amount',
       render: (amount) => (
         <Text strong style={{ color: '#f97316', fontSize: 16 }}>
-          ${amount.toFixed(2)}
+          {formatCurrency(amount)}
         </Text>
       ),
     },
@@ -109,7 +108,7 @@ const MyFines = () => {
       key: 'status',
       render: (status) => (
         <Tag 
-          color={status === 'Pending' ? 'orange' : 'green'} 
+          color={status === 'Unpaid' ? 'orange' : 'green'} 
           style={{ 
             borderRadius: 12, 
             padding: '0 12px', 
@@ -118,7 +117,7 @@ const MyFines = () => {
             textTransform: 'uppercase'
           }}
         >
-          {status === 'Pending' ? '• PENDING' : '• CLEARED'}
+          {status === 'Unpaid' ? '• UNPAID' : '• PAID'}
         </Tag>
       ),
     },
@@ -127,7 +126,7 @@ const MyFines = () => {
       key: 'instruction',
       render: (_, record) => (
         <Text type="secondary" style={{ fontSize: 13, fontStyle: 'italic' }}>
-          {record.status === 'Pending' ? 'Pay at Library Desk' : 'Cleared by Librarian'}
+          {record.status === 'Unpaid' ? 'Pay at Library Desk' : 'Cleared by Librarian'}
         </Text>
       ),
     },
@@ -153,9 +152,9 @@ const MyFines = () => {
               <Flex gap={16} align="flex-start">
                 <Avatar icon={<DollarOutlined />} style={{ backgroundColor: '#f8fafc', color: '#64748b' }} />
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>Total Pending</Text>
+                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>Total Unpaid</Text>
                   <Title level={2} style={{ margin: '4px 0 0', fontWeight: 800, color: '#f97316' }}>
-                    ${totalPendingAmount.toFixed(2)}
+                    {formatCurrency(totalPendingAmount)}
                   </Title>
                 </div>
               </Flex>
@@ -187,7 +186,7 @@ const MyFines = () => {
               <Flex gap={16} align="flex-start">
                 <Avatar icon={<HourglassOutlined />} style={{ backgroundColor: '#f8fafc', color: '#64748b' }} />
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>Pending Records</Text>
+                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>Unpaid Records</Text>
                   <Title level={2} style={{ margin: '4px 0 0', fontWeight: 800 }}> {pendingCount} Items </Title>
                   <Text style={{ fontSize: 11, fontWeight: 700, color: '#f97316', textTransform: 'uppercase' }}>Awaiting Desk Payment</Text>
                 </div>
@@ -200,7 +199,7 @@ const MyFines = () => {
       {/* Alert */}
       <Alert
         message={<Text strong style={{ color: '#92400e' }}>Important Information</Text>}
-        description={<Text style={{ color: '#b45309' }}>Fines stay in 'Pending' status until you pay at the library desk. Once paid, a Librarian will manually clear the record from your account.</Text>}
+        description={<Text style={{ color: '#b45309' }}>Fines stay in 'Unpaid' status until you pay at the library desk. Once paid, a Librarian will manually clear the record from your account.</Text>}
         type="warning"
         showIcon
         icon={<InfoCircleOutlined style={{ color: '#f97316' }} />}
@@ -233,23 +232,23 @@ const MyFines = () => {
               <Flex gap={16} align="center">
                 <Avatar 
                   size={40} 
-                  icon={fine.status === 'Cleared' ? <CheckCircleFilled /> : <ClockCircleOutlined />} 
+                  icon={fine.status === 'Paid' ? <CheckCircleFilled /> : <ClockCircleOutlined />} 
                   style={{ 
-                    backgroundColor: fine.status === 'Cleared' ? '#f0fdf4' : '#fffbeb', 
-                    color: fine.status === 'Cleared' ? '#22c55e' : '#f97316' 
+                    backgroundColor: fine.status === 'Paid' ? '#f0fdf4' : '#fffbeb', 
+                    color: fine.status === 'Paid' ? '#22c55e' : '#f97316' 
                   }} 
                 />
                 <div>
                   <Text strong style={{ fontSize: 15 }}>
-                    {fine.status === 'Cleared' ? 'Fine Cleared: ' : 'Fine Assessed: '} {fine.bookTitle}
+                    {fine.status === 'Paid' ? 'Fine Paid: ' : 'Fine Assessed: '} {fine.bookTitle}
                   </Text>
                   <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-                    {dayjs(fine.createdAt).format('MMM DD, YYYY [at] h:mm A')} • {fine.status === 'Cleared' ? 'Verified by Librarian' : 'Late Return'}
+                    {dayjs(fine.createdAt).format('MMM DD, YYYY [at] h:mm A')} • {fine.status === 'Paid' ? 'Verified by Librarian' : 'Late Return'}
                   </Text>
                 </div>
               </Flex>
-              <Text strong style={{ color: fine.status === 'Cleared' ? '#22c55e' : '#f97316', fontSize: 15 }}>
-                {fine.status === 'Cleared' ? 'CLEARED' : `$${fine.amount.toFixed(2)}`}
+              <Text strong style={{ color: fine.status === 'Paid' ? '#22c55e' : '#f97316', fontSize: 15 }}>
+                {fine.status === 'Paid' ? 'PAID' : formatCurrency(fine.amount)}
               </Text>
             </Flex>
           ))}

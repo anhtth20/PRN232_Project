@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Typography, Button, Input, Select, Table, Space, 
+  Typography, Button, Input, Select, Table, Space, InputNumber,
   Card, Row, Col, Flex, Dropdown, Tag, Pagination, App, Modal
 } from 'antd';
 import { 
   SearchOutlined, FilterOutlined, 
   TeamOutlined, LineChartOutlined, ReloadOutlined,
-  MoreOutlined, CheckCircleOutlined, CloseCircleOutlined, EnterOutlined
+  MoreOutlined, CheckCircleOutlined, CloseCircleOutlined, EnterOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../../api';
+
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -19,11 +21,15 @@ const LibrarianBorrowers = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [fineModalVisible, setFineModalVisible] = useState(false);
+  const [selectedBorrowId, setSelectedBorrowId] = useState(null);
+  const [fineAmount, setFineAmount] = useState(5000);
+  const [fineReason, setFineReason] = useState('');
   const { message } = App.useApp();
 
   const PAGE_SIZE = 5;
 
-  const fetchBorrows = async () => {
+  const fetchBorrows = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/Borrow');
@@ -43,16 +49,16 @@ const LibrarianBorrowers = () => {
       }
       
       setData(borrows);
-    } catch (error) {
+    } catch {
       message.error('Failed to load borrow requests');
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter, message]);
 
   useEffect(() => {
     fetchBorrows();
-  }, [search, statusFilter]);
+  }, [fetchBorrows]);
 
   const handleAction = async (id, actionStr) => {
     try {
@@ -61,6 +67,27 @@ const LibrarianBorrowers = () => {
       fetchBorrows();
     } catch (error) {
       message.error(error.response?.data?.message || `Failed to ${actionStr} request`);
+    }
+  };
+
+  const handleCreateFine = async () => {
+    if (!fineReason) {
+      message.warning('Please provide a reason for the fine');
+      return;
+    }
+    try {
+      await api.post('/Fines', {
+        borrowRequestId: selectedBorrowId,
+        amount: fineAmount,
+        reason: fineReason
+      });
+      message.success('Fine created successfully');
+      setFineModalVisible(false);
+      setFineReason('');
+      setFineAmount(5000);
+    } catch (error) {
+      console.error('Error creating fine:', error);
+      message.error('Failed to create fine');
     }
   };
 
@@ -123,39 +150,77 @@ const LibrarianBorrowers = () => {
       key: 'actions',
       align: 'right',
       render: (_, record) => {
-        const items = [];
-        
         if (record.status === 'Pending') {
-          items.push({
-            key: 'approve',
-            icon: <CheckCircleOutlined style={{ color: '#10b981' }} />,
-            label: 'Approve',
-            onClick: () => handleAction(record.id, 'approve'),
-          });
-          items.push({
-            key: 'reject',
-            icon: <CloseCircleOutlined style={{ color: '#ef4444' }} />,
-            label: 'Reject',
-            onClick: () => handleAction(record.id, 'reject'),
-          });
+          return (
+            <Space size="small">
+              <Button 
+                type="text" 
+                size="small"
+                icon={<CheckCircleOutlined style={{ color: '#10b981' }} />} 
+                onClick={() => handleAction(record.id, 'approve')}
+                style={{ fontWeight: 600, color: '#10b981' }}
+              >
+                Approve
+              </Button>
+              <Button 
+                type="text" 
+                size="small"
+                icon={<CloseCircleOutlined style={{ color: '#ef4444' }} />} 
+                onClick={() => handleAction(record.id, 'reject')}
+                style={{ fontWeight: 600, color: '#ef4444' }}
+              >
+                Reject
+              </Button>
+            </Space>
+          );
         }
         
         if (record.status === 'Approved') {
-          items.push({
-            key: 'return',
-            icon: <EnterOutlined style={{ color: '#3b82f6' }} />,
-            label: 'Mark Returned',
-            onClick: () => handleAction(record.id, 'return'),
-          });
+          return (
+            <Space size="small">
+              <Button 
+                type="text" 
+                size="small"
+                icon={<EnterOutlined style={{ color: '#3b82f6' }} />} 
+                onClick={() => handleAction(record.id, 'return')}
+                style={{ fontWeight: 600, color: '#3b82f6' }}
+              >
+                Return Book
+              </Button>
+              <Button 
+                type="text" 
+                size="small"
+                icon={<DollarOutlined style={{ color: '#f59e0b' }} />} 
+                onClick={() => {
+                  setSelectedBorrowId(record.id);
+                  setFineModalVisible(true);
+                }}
+                style={{ fontWeight: 600, color: '#f59e0b' }}
+              >
+                Fine
+              </Button>
+            </Space>
+          );
         }
 
-        if (items.length === 0) return <Text type="secondary">-</Text>;
+        if (record.status === 'Returned' || record.status === 'Rejected') {
+           return (
+            <Button 
+              type="text" 
+              size="small"
+              icon={<DollarOutlined style={{ color: '#f59e0b' }} />} 
+              onClick={() => {
+                setSelectedBorrowId(record.id);
+                setFineModalVisible(true);
+              }}
+              style={{ fontWeight: 600, color: '#f59e0b' }}
+            >
+              Fine
+            </Button>
+          );
+        }
 
-        return (
-          <Dropdown menu={{ items }} trigger={['click']}>
-            <Button type="text" icon={<MoreOutlined style={{ fontSize: 18, color: '#94a3b8' }} />} />
-          </Dropdown>
-        );
+        return <Text type="secondary">-</Text>;
       },
     },
   ];
@@ -282,6 +347,41 @@ const LibrarianBorrowers = () => {
           </Card>
         </Col>
       </Row>
+
+      <Modal
+        title={<Title level={4} style={{ margin: 0 }}>Issue Manual Fine</Title>}
+        open={fineModalVisible}
+        onOk={handleCreateFine}
+        onCancel={() => setFineModalVisible(false)}
+        okText="Create Fine"
+        cancelText="Cancel"
+        style={{ top: 100 }}
+        bodyStyle={{ padding: '24px 0' }}
+      >
+        <Flex vertical gap={20}>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: 8, color: '#475569' }}>FINE AMOUNT (VND)</Text>
+            <InputNumber 
+              suffix="đ"
+              value={fineAmount} 
+              onChange={val => setFineAmount(val)} 
+              style={{ width: '100%' }}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+              parser={value => value.replace(/đ\s?|(\.*)/g, '')}
+            />
+          </div>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: 8, color: '#475569' }}>REASON FOR FINE</Text>
+            <Input.TextArea 
+              rows={4} 
+              placeholder="e.g., Book returned with water damage, torn pages, etc."
+              value={fineReason}
+              onChange={e => setFineReason(e.target.value)}
+              style={{ borderRadius: 8 }}
+            />
+          </div>
+        </Flex>
+      </Modal>
     </div>
   );
 };

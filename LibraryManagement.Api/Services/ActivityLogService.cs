@@ -18,7 +18,7 @@ namespace LibraryManagement.Api.Services
             _context = context;
         }
 
-        public async Task LogActivityAsync(string action, string details, string memberName = null, string status = "Completed")
+        public async Task LogActivityAsync(string action, string details, string? memberName = null, string status = "Completed")
         {
             var log = new ActivityLog
             {

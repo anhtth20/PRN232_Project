@@ -14,6 +14,7 @@ import {
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { formatCurrency } from '../../utils/format';
 
 const { Title, Text } = Typography;
 
@@ -156,7 +157,7 @@ const LibrarianDashboard = () => {
                 <MoneyCollectFilled style={{ fontSize: 20, color: '#f59e0b' }} />
               </div>
               <Text type="secondary" style={{ fontWeight: 600, fontSize: 13, color: '#64748b', marginBottom: 4 }}>Pending Fines</Text>
-              <Text style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>${data.pendingFines?.toFixed(2)}</Text>
+              <Text style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{formatCurrency(data.pendingFines)}</Text>
             </Flex>
           </Card>
         </Col>

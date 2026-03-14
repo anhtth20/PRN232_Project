@@ -9,17 +9,17 @@ namespace LibraryManagement.Api.Models
 
         [Required]
         [MaxLength(100)]
-        public string Action { get; set; } // e.g., "Borrowed", "Returned", "Registered", "Issued Fine", "Added Book"
+        public string Action { get; set; } = string.Empty;
 
         [MaxLength(200)]
-        public string Details { get; set; } // e.g., "The Great Gatsby" or "Member John Doe"
+        public string Details { get; set; } = string.Empty;
 
         [MaxLength(100)]
-        public string MemberName { get; set; } // Optional: Who was involved in this action?
+        public string? MemberName { get; set; }
 
         public DateTime Timestamp { get; set; }
 
         [MaxLength(50)]
-        public string Status { get; set; } // e.g., "Completed", "Pending", "Failed"
+        public string Status { get; set; } = "Completed";
     }
 }

@@ -7,10 +7,11 @@ namespace LibraryManagement.Api.Services
 {
     public interface IFineService
     {
-        Task<FineResponseDto?> CreateFineAsync(int borrowRequestId, decimal amount);
+        Task<FineResponseDto?> CreateFineAsync(int borrowRequestId, decimal amount, string reason);
         Task<IEnumerable<FineResponseDto>> GetMyFinesAsync(int userId);
         Task<IEnumerable<FineResponseDto>> GetAllFinesAsync();
         Task<FineResponseDto?> GetFineByBorrowIdAsync(int borrowId);
+        Task<bool> UpdateFineStatusAsync(int fineId, string status);
     }
 
     public class FineService : IFineService
@@ -22,7 +23,7 @@ namespace LibraryManagement.Api.Services
             _context = context;
         }
 
-        public async Task<FineResponseDto?> CreateFineAsync(int borrowRequestId, decimal amount)
+        public async Task<FineResponseDto?> CreateFineAsync(int borrowRequestId, decimal amount, string reason)
         {
             var borrow = await _context.BorrowRequests.FindAsync(borrowRequestId);
             if (borrow == null)
@@ -32,7 +33,9 @@ namespace LibraryManagement.Api.Services
             {
                 BorrowRequestId = borrowRequestId,
                 Amount = amount,
-                CreatedAt = DateTime.UtcNow
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow,
+                Status = "Unpaid"
             };
 
             _context.Fines.Add(fine);
@@ -48,6 +51,7 @@ namespace LibraryManagement.Api.Services
                 .ThenInclude(br => br!.Book)
                 .ThenInclude(b => b!.Author)
                 .Where(f => f.BorrowRequest!.UserId == userId)
+                .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync();
 
             return fines.Select(f => MapToDto(f)).ToList();
@@ -59,6 +63,7 @@ namespace LibraryManagement.Api.Services
                 .Include(f => f.BorrowRequest)
                 .ThenInclude(br => br!.Book)
                 .ThenInclude(b => b!.Author)
+                .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync();
             return fines.Select(f => MapToDto(f)).ToList();
         }
@@ -74,6 +79,16 @@ namespace LibraryManagement.Api.Services
             return fine == null ? null : MapToDto(fine);
         }
 
+        public async Task<bool> UpdateFineStatusAsync(int fineId, string status)
+        {
+            var fine = await _context.Fines.FindAsync(fineId);
+            if (fine == null) return false;
+
+            fine.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         private static FineResponseDto MapToDto(Fine fine)
         {
             return new FineResponseDto
@@ -81,6 +96,7 @@ namespace LibraryManagement.Api.Services
                 Id = fine.Id,
                 BorrowRequestId = fine.BorrowRequestId,
                 Amount = fine.Amount,
+                Reason = fine.Reason,
                 CreatedAt = fine.CreatedAt,
                 Status = fine.Status,
                 BookId = fine.BorrowRequest?.BookId,
