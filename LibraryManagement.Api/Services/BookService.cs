@@ -10,7 +10,7 @@ namespace LibraryManagement.Api.Services
         Task<(IEnumerable<BookResponseDto> books, int total)> GetBooksAsync(string? search, int? categoryId = null, int pageNumber = 1, int pageSize = 10, string sortBy = "id");
         Task<BookResponseDto?> GetBookByIdAsync(int id);
         Task<BookResponseDto?> CreateBookAsync(BookCreateDto dto, string? imageUrl = null);
-        Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null);
+        Task<(BookResponseDto? Book, string? Error)> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null);
         Task<bool> DeleteBookAsync(int id);
     }
 
@@ -94,40 +94,52 @@ namespace LibraryManagement.Api.Services
             return MapToDto(book);
         }
 
-        public async Task<BookResponseDto?> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null)
+        public async Task<(BookResponseDto? Book, string? Error)> UpdateBookAsync(int id, BookUpdateDto dto, string? imageUrl = null)
         {
             var book = await _context.Books
                 .Include(b => b.Author)
                 .Include(b => b.Category)
                 .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
             if (book == null)
-                return null;
+                return (null, "Book not found");
 
-            book.Title = dto.Title;
-            book.AuthorId = dto.AuthorId;
-            book.CategoryId = dto.CategoryId;
-            book.Quantity = dto.Quantity;
-            book.Description = dto.Description;
-            // Only update image if a new one was uploaded
-            if (imageUrl != null)
-                book.ImageUrl = imageUrl;
+            try
+            {
+                book.Title = dto.Title;
+                book.AuthorId = dto.AuthorId;
+                book.CategoryId = dto.CategoryId;
+                book.AdjustQuantity(dto.Quantity);
+                book.Description = dto.Description;
+                
+                if (imageUrl != null)
+                    book.ImageUrl = imageUrl;
 
-            _context.Books.Update(book);
-            await _context.SaveChangesAsync();
+                _context.Books.Update(book);
+                await _context.SaveChangesAsync();
 
-            // Reload navigation properties
-            await _context.Entry(book).Reference(b => b.Author).LoadAsync();
-            await _context.Entry(book).Reference(b => b.Category).LoadAsync();
+                await _context.Entry(book).Reference(b => b.Author).LoadAsync();
+                await _context.Entry(book).Reference(b => b.Category).LoadAsync();
 
-            return MapToDto(book);
+                return (MapToDto(book), null);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return (null, ex.Message);
+            }
         }
 
         public async Task<bool> DeleteBookAsync(int id)
         {
             var book = await _context.Books
                 .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
-            if (book == null)
-                return false;
+            if (book == null) return false;
+
+            // Check if there are active borrows for this book
+            var activeBorrows = await _context.BorrowRequests.AnyAsync(br => br.BookId == id && br.Status == "Approved");
+            if (activeBorrows)
+            {
+                throw new InvalidOperationException("Cannot delete book because there are still active borrows linked to it.");
+            }
 
             book.IsDeleted = true;
             _context.Books.Update(book);

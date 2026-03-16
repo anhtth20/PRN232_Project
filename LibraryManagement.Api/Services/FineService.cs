@@ -84,6 +84,11 @@ namespace LibraryManagement.Api.Services
             var fine = await _context.Fines.FindAsync(fineId);
             if (fine == null) return false;
 
+            if (fine.Status == status)
+            {
+                throw new InvalidOperationException($"Fine is already marked as {status}.");
+            }
+
             fine.Status = status;
             await _context.SaveChangesAsync();
             return true;
@@ -101,7 +106,8 @@ namespace LibraryManagement.Api.Services
                 Status = fine.Status,
                 BookId = fine.BorrowRequest?.BookId,
                 BookTitle = fine.BorrowRequest?.Book?.Title,
-                AuthorName = fine.BorrowRequest?.Book?.Author?.Name
+                AuthorName = fine.BorrowRequest?.Book?.Author?.Name,
+                ImageUrl = fine.BorrowRequest?.Book?.ImageUrl
             };
         }
     }

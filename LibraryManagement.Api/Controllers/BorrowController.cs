@@ -30,14 +30,18 @@ namespace LibraryManagement.Api.Controllers
             if (dto.DueDate <= DateTime.UtcNow)
                 return BadRequest(new { message = "Due date must be in the future" });
 
-            var borrow = await _borrowService.CreateBorrowRequestAsync(userId.Value, dto);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot create borrow request. Book not available or you already have 3 approved books" });
+            try
+            {
+                var borrow = await _borrowService.CreateBorrowRequestAsync(userId.Value, dto);
+                var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+                await _activityLogService.LogActivityAsync("Requested Borrow", $"Book ID: {dto.BookId}", userName);
 
-            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Requested Borrow", $"Book ID: {dto.BookId}", userName);
-
-            return CreatedAtAction(nameof(GetMyBorrows), new { }, borrow);
+                return CreatedAtAction(nameof(GetMyBorrows), new { }, borrow);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("my")]
@@ -74,14 +78,21 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<ActionResult<BorrowResponseDto>> ApproveBorrow(int id)
         {
-            var borrow = await _borrowService.ApproveBorrowAsync(id);
-            if (borrow == null)
-                return BadRequest(new { message = "Cannot approve this borrow request. Invalid status or book not available" });
+            try
+            {
+                var borrow = await _borrowService.ApproveBorrowAsync(id);
+                if (borrow == null)
+                    return BadRequest(new { message = "Cannot approve this borrow request. Request not found." });
 
-            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Approved Borrow", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
+                var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+                await _activityLogService.LogActivityAsync("Approved Borrow", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
 
-            return Ok(borrow);
+                return Ok(borrow);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}/reject")]
@@ -99,12 +110,49 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<ActionResult<BorrowResponseDto>> ReturnBorrow(int id)
         {
-            var borrow = await _borrowService.ReturnBorrowAsync(id);
+            try
+            {
+                var borrow = await _borrowService.ReturnBorrowAsync(id);
+                if (borrow == null)
+                    return BadRequest(new { message = "Cannot return this borrow request. Request not found." });
+
+                var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+                await _activityLogService.LogActivityAsync("Returned Book", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
+
+                return Ok(borrow);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}/cancel")]
+        public async Task<ActionResult<BorrowResponseDto>> CancelBorrow(int id)
+        {
+            var userId = GetUserId();
+            bool isLibrarian = User.FindFirst("role")?.Value == "Librarian";
+
+            var borrow = await _borrowService.CancelBorrowAsync(id, isLibrarian ? null : userId);
             if (borrow == null)
-                return BadRequest(new { message = "Cannot return this borrow request. Invalid status" });
+                return BadRequest(new { message = "Cannot cancel this borrow request. Invalid status or unauthorized" });
 
             var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Returned Book", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
+            await _activityLogService.LogActivityAsync("Cancelled Borrow", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
+
+            return Ok(borrow);
+        }
+
+        [HttpPut("{id}/revert")]
+        [Authorize(Policy = "LibrarianOnly")]
+        public async Task<ActionResult<BorrowResponseDto>> RevertBorrow(int id)
+        {
+            var borrow = await _borrowService.RevertBorrowAsync(id);
+            if (borrow == null)
+                return BadRequest(new { message = "Cannot revert this borrow request. Invalid status or no stock left to re-approve" });
+
+            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+            await _activityLogService.LogActivityAsync("Reverted Borrow", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
 
             return Ok(borrow);
         }

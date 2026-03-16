@@ -71,8 +71,8 @@ const LibrarianBooks = () => {
         api.get('/Authors?pageSize=1000'),
         api.get('/Categories')
       ]);
-      setAuthors(authorRes.data.data || []);
-      setCategories(catRes.data || []);
+      setAuthors((authorRes.data.data || []).sort((a,b) => (a.name || '').localeCompare(b.name || '')));
+      setCategories((catRes.data || []).sort((a,b) => (a.name || '').localeCompare(b.name || '')));
     } catch {
       console.error('Failed to load dependencies');
     }
@@ -171,8 +171,8 @@ const LibrarianBooks = () => {
           await api.delete(`/Books/${id}`);
           message.success('Book deleted');
           fetchBooks();
-        } catch {
-          message.error('Failed to delete book');
+        } catch (error) {
+          message.error(error.response?.data?.message || 'Failed to delete book');
         }
       }
     });

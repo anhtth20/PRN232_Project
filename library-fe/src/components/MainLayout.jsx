@@ -39,17 +39,10 @@ const MainLayout = ({ children, user, onLogout, onSearch }) => {
           <Flex align="center" gap={10} onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             <BookFilled style={{ fontSize: 30, color: '#2563eb' }} />
             <Text strong style={{ fontSize: 20, color: '#1e293b', letterSpacing: '-0.02em' }}>
-              Lumina Library
+              HaAnh's Library
             </Text>
           </Flex>
 
-          <Input
-            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-            placeholder="Search titles, authors..."
-            variant="filled"
-            style={{ maxWidth: 380, borderRadius: 12, height: 44 }}
-            onChange={(e) => onSearch?.(e.target.value)}
-          />
         </Flex>
 
         {/* Right: Nav + User */}
@@ -125,7 +118,7 @@ const MainLayout = ({ children, user, onLogout, onSearch }) => {
         <Flex justify="space-between" align="center">
           <Flex align="center" gap={8}>
             <BookFilled style={{ color: '#2563eb' }} />
-            <Text type="secondary">Lumina Library Management System</Text>
+            <Text type="secondary">HaAnh's Library Management System</Text>
           </Flex>
           <Space size="large">
             <Text type="secondary" style={{ cursor: 'pointer' }}>Help Center</Text>

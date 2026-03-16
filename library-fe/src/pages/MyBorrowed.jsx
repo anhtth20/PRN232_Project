@@ -14,6 +14,8 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import AppImage from '../components/AppImage';
+
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
@@ -65,7 +67,6 @@ const MyBorrowed = () => {
   const filteredData = data.filter(item => {
     if (activeTab === 'Current') return item.status === 'Approved' || item.status === 'Pending';
     if (activeTab === 'Past Borrows') return item.status === 'Returned' || item.status === 'Rejected';
-    if (activeTab === 'Reserved') return false; // Not implemented in current schema
     return true;
   });
 
@@ -106,9 +107,10 @@ const MyBorrowed = () => {
       key: 'cover',
       render: (url) => (
         <div style={{ width: 60, height: 80, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-          <img 
-            src={url || 'https://via.placeholder.com/60x80?text=No+Cover'} 
+          <AppImage 
+            src={url} 
             alt="cover" 
+            fallbackText=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
           />
         </div>
@@ -219,7 +221,6 @@ const MyBorrowed = () => {
         items={[
           { key: 'Current', label: 'Current' },
           { key: 'Past Borrows', label: 'Past Borrows' },
-          { key: 'Reserved', label: 'Reserved' },
         ]}
         style={{ marginBottom: 24 }}
       />

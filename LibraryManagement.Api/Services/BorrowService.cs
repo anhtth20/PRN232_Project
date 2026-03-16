@@ -13,6 +13,8 @@ namespace LibraryManagement.Api.Services
         Task<BorrowResponseDto?> ApproveBorrowAsync(int borrowId);
         Task<BorrowResponseDto?> RejectBorrowAsync(int borrowId);
         Task<BorrowResponseDto?> ReturnBorrowAsync(int borrowId);
+        Task<BorrowResponseDto?> CancelBorrowAsync(int borrowId, int? userId = null);
+        Task<BorrowResponseDto?> RevertBorrowAsync(int borrowId);
         Task<BookBorrowStatusDto> GetBookBorrowStatusAsync(int userId, int bookId);
     }
 
@@ -31,8 +33,14 @@ namespace LibraryManagement.Api.Services
         {
             // Check if book exists and has available quantity
             var book = await _context.Books.FindAsync(dto.BookId);
-            if (book == null || book.AvailableQuantity == 0)
-                return null;
+            if (book == null)
+            {
+                throw new InvalidOperationException("Book not found.");
+            }
+            if (book.AvailableQuantity <= 0)
+            {
+                throw new InvalidOperationException("Book is currently out of stock.");
+            }
 
             // Check if borrower already has 3 approved books
             var approvedCount = await _context.BorrowRequests
@@ -40,7 +48,9 @@ namespace LibraryManagement.Api.Services
                 .CountAsync();
 
             if (approvedCount >= 3)
-                return null;
+            {
+                throw new InvalidOperationException("You cannot borrow more than 3 approved books at a time.");
+            }
 
             var borrow = new BorrowRequest
             {
@@ -81,15 +91,19 @@ namespace LibraryManagement.Api.Services
         public async Task<BorrowResponseDto?> ApproveBorrowAsync(int borrowId)
         {
             var borrow = await _context.BorrowRequests.FindAsync(borrowId);
-            if (borrow == null || borrow.Status != "Pending")
-                return null;
+            if (borrow == null) return null;
+
+            if (borrow.Status != "Pending")
+            {
+                throw new InvalidOperationException("Only pending borrow requests can be approved.");
+            }
 
             var book = await _context.Books.FindAsync(borrow.BookId);
-            if (book == null || book.AvailableQuantity == 0)
+            if (book == null)
                 return null;
 
+            book.ApproveBorrow();
             borrow.Status = "Approved";
-            book.AvailableQuantity--;
 
             _context.BorrowRequests.Update(borrow);
             _context.Books.Update(book);
@@ -117,16 +131,19 @@ namespace LibraryManagement.Api.Services
                 .Include(br => br.Book)
                 .FirstOrDefaultAsync(br => br.Id == borrowId);
 
-            if (borrow == null || borrow.Status != "Approved")
-                return null;
+            if (borrow == null) return null;
 
+            if (borrow.Status != "Approved")
+            {
+                throw new InvalidOperationException("Only approved borrow requests can be returned.");
+            }
+
+            borrow.Book!.ReturnBook();
             borrow.Status = "Returned";
-            borrow.Book!.AvailableQuantity++;
 
             _context.BorrowRequests.Update(borrow);
             _context.Books.Update(borrow.Book);
 
-            // Check if overdue and create fine
             if (DateTime.UtcNow > borrow.DueDate)
             {
                 var daysLate = (int)(DateTime.UtcNow - borrow.DueDate).TotalDays;
@@ -134,6 +151,80 @@ namespace LibraryManagement.Api.Services
                 await _fineService.CreateFineAsync(borrowId, fineAmount, "Late return");
             }
 
+            await _context.SaveChangesAsync();
+
+            return await MapToDtoAsync(borrow);
+        }
+
+        public async Task<BorrowResponseDto?> CancelBorrowAsync(int borrowId, int? userId = null)
+        {
+            var borrow = await _context.BorrowRequests
+                .Include(br => br.Book)
+                .FirstOrDefaultAsync(br => br.Id == borrowId);
+
+            if (borrow == null) return null;
+
+            if (userId.HasValue && borrow.UserId != userId.Value)
+            {
+                return null; // Unauthorized
+            }
+
+            if (borrow.Status == "Pending")
+            {
+                borrow.Status = "Cancelled";
+            }
+            else if (borrow.Status == "Approved")
+            {
+                borrow.Status = "Cancelled";
+                borrow.Book!.ReturnBook();
+            }
+            else
+            {
+                return null;
+            }
+
+            _context.BorrowRequests.Update(borrow);
+            if (borrow.Book != null)
+            {
+                _context.Books.Update(borrow.Book);
+            }
+            await _context.SaveChangesAsync();
+
+            return await MapToDtoAsync(borrow);
+        }
+
+        public async Task<BorrowResponseDto?> RevertBorrowAsync(int borrowId)
+        {
+            var borrow = await _context.BorrowRequests
+                .Include(br => br.Book)
+                .FirstOrDefaultAsync(br => br.Id == borrowId);
+
+            if (borrow == null) return null;
+
+            if (borrow.Status == "Returned")
+            {
+                try
+                {
+                    borrow.Book!.ApproveBorrow();
+                    borrow.Status = "Approved";
+                }
+                catch (InvalidOperationException)
+                {
+                    return null;
+                }
+            }
+            else if (borrow.Status == "Approved")
+            {
+                borrow.Book!.ReturnBook();
+                borrow.Status = "Pending";
+            }
+            else
+            {
+                return null;
+            }
+
+            _context.BorrowRequests.Update(borrow);
+            _context.Books.Update(borrow.Book);
             await _context.SaveChangesAsync();
 
             return await MapToDtoAsync(borrow);

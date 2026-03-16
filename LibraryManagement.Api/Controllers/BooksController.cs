@@ -92,9 +92,13 @@ namespace LibraryManagement.Api.Controllers
                     return BadRequest(new { message = "Invalid image file. Only JPG, JPEG, PNG, GIF, and WEBP are allowed." });
             }
 
-            var book = await _bookService.UpdateBookAsync(id, dto, imageUrl);
-            if (book == null)
-                return NotFound(new { message = "Book not found" });
+            var (book, error) = await _bookService.UpdateBookAsync(id, dto, imageUrl);
+            if (error != null)
+            {
+                if (error == "Book not found")
+                    return NotFound(new { message = error });
+                return BadRequest(new { message = error });
+            }
 
             var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
             await _activityLogService.LogActivityAsync("Updated Book", book.Title, userName);
@@ -107,14 +111,21 @@ namespace LibraryManagement.Api.Controllers
         public async Task<IActionResult> DeleteBook(int id)
         {
             var book = await _bookService.GetBookByIdAsync(id);
-            var result = await _bookService.DeleteBookAsync(id);
-            if (!result)
-                return NotFound(new { message = "Book not found" });
+            try
+            {
+                var result = await _bookService.DeleteBookAsync(id);
+                if (!result)
+                    return NotFound(new { message = "Book not found" });
 
-            var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
-            await _activityLogService.LogActivityAsync("Deleted Book", book?.Title ?? $"ID: {id}", userName);
+                var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+                await _activityLogService.LogActivityAsync("Deleted Book", book?.Title ?? $"ID: {id}", userName);
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>

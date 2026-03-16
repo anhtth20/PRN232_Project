@@ -102,14 +102,6 @@ const LibrarianDashboard = () => {
             Status report for Central Library Branch - {new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}
           </Text>
         </Flex>
-        <Flex gap={12}>
-          <Button icon={<CalendarOutlined />} size="large" style={{ borderRadius: 8, fontWeight: 600, color: '#475569', borderColor: '#cbd5e1' }}>
-            Last 30 Days
-          </Button>
-          <Button icon={<DownloadOutlined />} size="large" style={{ borderRadius: 8, fontWeight: 600, color: '#475569', borderColor: '#cbd5e1' }}>
-            Report
-          </Button>
-        </Flex>
       </Flex>
 
       {/* Stat Cards */}

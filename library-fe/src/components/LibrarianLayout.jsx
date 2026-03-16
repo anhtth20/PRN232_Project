@@ -12,7 +12,7 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 
-const { Sider, Content } = Layout;
+const { Sider, Content, Header } = Layout;
 const { Text } = Typography;
 
 const LibrarianLayout = ({ children, user }) => {
@@ -78,15 +78,6 @@ const LibrarianLayout = ({ children, user }) => {
 
   const userMenu = {
     items: [
-      {
-        key: 'profile',
-        icon: <SettingFilled />,
-        label: 'Profile Settings',
-        onClick: () => navigate('/profile'),
-      },
-      {
-        type: 'divider',
-      },
       {
         key: 'logout',
         icon: <LogoutOutlined />,
@@ -209,7 +200,21 @@ const LibrarianLayout = ({ children, user }) => {
 
         {/* Main Content Area */}
         <Layout style={{ marginLeft: 240, background: '#f8fafc' }}>
-          <Content style={{ minHeight: '100vh' }}>
+          <Header 
+            style={{ 
+              background: '#ffffff', 
+              padding: '0 32px', 
+              height: '64px', 
+              borderBottom: '1px solid #e2e8f0', 
+              display: 'flex', 
+              alignItems: 'center',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              width: '100%'
+            }}
+          />
+          <Content style={{ padding: '32px', minHeight: 'calc(100vh - 64px)' }}>
             {children}
           </Content>
         </Layout>

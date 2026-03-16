@@ -20,5 +20,37 @@ namespace LibraryManagement.Api.Models
 
         // Navigation property
         public ICollection<BorrowRequest> BorrowRequests { get; set; } = new List<BorrowRequest>();
+
+        public void ApproveBorrow()
+        {
+            if (AvailableQuantity <= 0)
+            {
+                throw new InvalidOperationException("No items available for borrow.");
+            }
+            AvailableQuantity--;
+        }
+
+        public void ReturnBook()
+        {
+            if (AvailableQuantity >= Quantity)
+            {
+                throw new InvalidOperationException("Cannot return book. Available quantity already exceeds total quantity.");
+            }
+            AvailableQuantity++;
+        }
+
+        public void AdjustQuantity(int newQuantity)
+        {
+            int delta = newQuantity - Quantity;
+            int newAvailable = AvailableQuantity + delta;
+            
+            if (newAvailable < 0)
+            {
+                throw new InvalidOperationException("Cannot reduce quantity below currently borrowed items.");
+            }
+            
+            Quantity = newQuantity;
+            AvailableQuantity = newAvailable;
+        }
     }
 }

@@ -265,10 +265,10 @@ const LibrarianBorrowers = () => {
             onChange={v => { setStatusFilter(v); setPage(1); }}
             options={[
               { value: 'all', label: 'All Statuses' },
-              { value: 'pending', label: 'Pending' },
               { value: 'approved', label: 'Approved' },
-              { value: 'returned', label: 'Returned' },
+              { value: 'pending', label: 'Pending' },
               { value: 'rejected', label: 'Rejected' },
+              { value: 'returned', label: 'Returned' },
             ]}
           />
           <Button 

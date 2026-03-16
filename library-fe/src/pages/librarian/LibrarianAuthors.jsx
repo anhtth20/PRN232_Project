@@ -29,7 +29,7 @@ const LibrarianAuthors = () => {
 
   const PAGE_SIZE = 5;
 
-  const fetchAuthors = async () => {
+  const fetchAuthors = React.useCallback(async () => {
     setLoading(true);
     try {
       // Simplistic client-side pagination since API doesn't support it natively yet
@@ -43,16 +43,16 @@ const LibrarianAuthors = () => {
       setTotalAuthors(data.length);
       const start = (page - 1) * PAGE_SIZE;
       setAuthors(data.slice(start, start + PAGE_SIZE));
-    } catch (error) {
+    } catch {
       message.error('Failed to load authors');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, message]);
 
   useEffect(() => {
     fetchAuthors();
-  }, [page, search]);
+  }, [fetchAuthors]);
 
   const handleCreate = async (values) => {
     try {
@@ -79,7 +79,7 @@ const LibrarianAuthors = () => {
       setIsEditModalOpen(false);
       fetchAuthors();
     } catch (error) {
-      message.error('Failed to update author');
+      message.error(error.response?.data?.message || 'Failed to update author');
     }
   };
 
@@ -96,7 +96,7 @@ const LibrarianAuthors = () => {
           message.success('Author deleted');
           fetchAuthors();
         } catch (error) {
-          message.error('Failed to delete author');
+          message.error(error.response?.data?.message || 'Failed to delete author');
         }
       }
     });

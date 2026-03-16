@@ -92,8 +92,8 @@ const LibrarianCategories = () => {
           await api.delete(`/Categories/${id}`);
           message.success('Category deleted');
           fetchCategories();
-        } catch {
-          message.error('Failed to delete category');
+        } catch (error) {
+          message.error(error.response?.data?.message || 'Failed to delete category');
         }
       }
     });

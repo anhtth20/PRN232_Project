@@ -13,15 +13,12 @@ import {
   FireOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import AppImage from '../components/AppImage';
+
 
 const { Title, Text } = Typography;
 
-const API_BASE = 'http://localhost:5237';
-const resolveImageUrl = (url) => {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return `${API_BASE}${url}`;
-};
+
 
 const getCategoryIcon = (name) => {
   const n = name.toLowerCase();
@@ -197,9 +194,10 @@ const BookList = ({ onBookClick, externalSearch }) => {
                       styles={{ body: { padding: '16px' } }}
                       cover={
                         <div style={{ position: 'relative', paddingTop: '140%', background: '#f1f5f9' }}>
-                          <img
-                            src={resolveImageUrl(book.imageUrl) || 'https://placehold.co/300x450?text=No+Cover'}
+                          <AppImage
+                            src={book.imageUrl}
                             alt={book.title}
+                            fallbackText="No Cover"
                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                           <Tag

@@ -3,6 +3,8 @@ import { Modal, Button, Typography, Row, Col, Progress, App, Calendar, Tag, Flex
 import { CheckCircleFilled, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import AppImage from './AppImage';
+
 
 const { Title, Text } = Typography;
 
@@ -91,9 +93,10 @@ const BorrowModal = ({ open, book, onClose, onSuccess }) => {
           margin: '16px 0',
         }}
       >
-        <img
-          src={book.imageUrl || 'https://via.placeholder.com/64x90?text=No+Cover'}
+        <AppImage
+          src={book.imageUrl}
           alt={book.title}
+          fallbackText="No Cover"
           style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.12)', flexShrink: 0 }}
         />
         <div>

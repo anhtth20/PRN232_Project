@@ -65,11 +65,18 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
-            var result = await _authorService.DeleteAuthorAsync(id);
-            if (!result)
-                return NotFound(new { message = "Author not found" });
+            try
+            {
+                var result = await _authorService.DeleteAuthorAsync(id);
+                if (!result)
+                    return NotFound(new { message = "Author not found" });
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

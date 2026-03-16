@@ -11,5 +11,6 @@ namespace LibraryManagement.Api.DTOs
         public int? BookId { get; set; }
         public string? BookTitle { get; set; }
         public string? AuthorName { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

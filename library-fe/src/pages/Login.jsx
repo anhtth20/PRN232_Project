@@ -56,7 +56,7 @@ const Login = ({ onLoginSuccess }) => {
       >
         <Flex align="center" gap={10}>
           <BookFilled style={{ fontSize: 28, color: '#2563eb' }} />
-          <Title level={4} style={{ margin: 0 }}>LibroSync</Title>
+          <Title level={4} style={{ margin: 0 }}>HaAnh's Library</Title>
         </Flex>
         <Flex gap={30}>
           <Link href="#" style={{ color: '#595959' }}>Home</Link>
@@ -111,7 +111,7 @@ const Login = ({ onLoginSuccess }) => {
                 label={
                   <Flex justify="space-between" style={{ width: '100%' }}>
                     <span>Password</span>
-                    <Link href="#" style={{ fontSize: 12, fontWeight: 'normal' }}>Forgot password?</Link>
+                    {/* <Link href="#" style={{ fontSize: 12, fontWeight: 'normal' }}>Forgot password?</Link> */}
                   </Flex>
                 }
                 name="password"
@@ -124,9 +124,6 @@ const Login = ({ onLoginSuccess }) => {
                 />
               </Form.Item>
 
-              <Form.Item name="remember" valuePropName="checked">
-                <Checkbox>Remember me</Checkbox>
-              </Form.Item>
 
               <Form.Item style={{ marginBottom: 12 }}>
                 <Button

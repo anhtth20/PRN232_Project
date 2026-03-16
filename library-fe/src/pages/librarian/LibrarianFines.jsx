@@ -22,7 +22,7 @@ const LibrarianFines = () => {
 
   const PAGE_SIZE = 5;
 
-  const fetchFines = async () => {
+  const fetchFines = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/Fines');
@@ -47,7 +47,7 @@ const LibrarianFines = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter, message]);
 
   const handleStatusChange = async (id, newStatus) => {
     try {
@@ -64,7 +64,7 @@ const LibrarianFines = () => {
 
   useEffect(() => {
     fetchFines();
-  }, [search, statusFilter]);
+  }, [fetchFines]);
 
   const getStatusTag = (status) => {
     switch (status) {
@@ -186,8 +186,8 @@ const LibrarianFines = () => {
             onChange={v => { setStatusFilter(v); setPage(1); }}
             options={[
               { value: 'all', label: 'All Statuses' },
-              { value: 'unpaid', label: 'Unpaid' },
               { value: 'paid', label: 'Paid' },
+              { value: 'unpaid', label: 'Unpaid' },
             ]}
           />
           <Button 

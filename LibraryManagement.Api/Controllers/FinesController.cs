@@ -54,11 +54,18 @@ namespace LibraryManagement.Api.Controllers
         [Authorize(Policy = "LibrarianOnly")]
         public async Task<IActionResult> UpdateFineStatus(int id, [FromBody] string status)
         {
-            var result = await _fineService.UpdateFineStatusAsync(id, status);
-            if (!result)
-                return NotFound(new { message = "Fine not found" });
+            try
+            {
+                var result = await _fineService.UpdateFineStatusAsync(id, status);
+                if (!result)
+                    return NotFound(new { message = "Fine not found" });
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost]

@@ -16,15 +16,12 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import AppImage from '../components/AppImage';
+
 
 const { Title, Text } = Typography;
 
-const API_BASE = 'http://localhost:5237';
-const resolveImageUrl = (url) => {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return `${API_BASE}${url}`;
-};
+
 
 const BookDetails = ({ bookId, onBack }) => {
   const [book, setBook] = useState(null);
@@ -283,13 +280,7 @@ const BookDetails = ({ bookId, onBack }) => {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 32px 64px' }}>
       {/* Breadcrumb + back */}
       <Flex justify="space-between" align="center" style={{ marginBottom: 24 }}>
-        <Breadcrumb
-          items={[
-            { title: <a onClick={onBack}>Home</a> },
-            { title: 'Catalog' },
-            { title: 'Book Details' },
-          ]}
-        />
+        
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={onBack}>
           Back to Results
         </Button>
@@ -299,9 +290,10 @@ const BookDetails = ({ bookId, onBack }) => {
         {/* Left: Image + availability */}
         <Col xl={10} lg={10} md={24}>
           <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
-            <img
-              src={resolveImageUrl(book.imageUrl) || 'https://placehold.co/400x600?text=No+Cover'}
+            <AppImage
+              src={book.imageUrl}
               alt={book.title}
+              fallbackText="No Cover"
               style={{ width: '100%', display: 'block', objectFit: 'cover' }}
             />
           </div>

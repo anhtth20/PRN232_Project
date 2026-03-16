@@ -222,41 +222,6 @@ const MyFines = () => {
           style={{ width: '100%' }}
         />
       </Card>
-
-      {/* Recent Activity */}
-      <div style={{ marginTop: 48 }}>
-        <Title level={3} style={{ fontWeight: 800, marginBottom: 24 }}>Recent Activity</Title>
-        <Flex vertical gap={16}>
-          {fines.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt))).slice(0, 3).map(fine => (
-            <Flex key={fine.id} align="center" justify="space-between" style={{ padding: '0 8px' }}>
-              <Flex gap={16} align="center">
-                <Avatar 
-                  size={40} 
-                  icon={fine.status === 'Paid' ? <CheckCircleFilled /> : <ClockCircleOutlined />} 
-                  style={{ 
-                    backgroundColor: fine.status === 'Paid' ? '#f0fdf4' : '#fffbeb', 
-                    color: fine.status === 'Paid' ? '#22c55e' : '#f97316' 
-                  }} 
-                />
-                <div>
-                  <Text strong style={{ fontSize: 15 }}>
-                    {fine.status === 'Paid' ? 'Fine Paid: ' : 'Fine Assessed: '} {fine.bookTitle}
-                  </Text>
-                  <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-                    {dayjs(fine.createdAt).format('MMM DD, YYYY [at] h:mm A')} • {fine.status === 'Paid' ? 'Verified by Librarian' : 'Late Return'}
-                  </Text>
-                </div>
-              </Flex>
-              <Text strong style={{ color: fine.status === 'Paid' ? '#22c55e' : '#f97316', fontSize: 15 }}>
-                {fine.status === 'Paid' ? 'PAID' : formatCurrency(fine.amount)}
-              </Text>
-            </Flex>
-          ))}
-          {fines.length === 0 && !loading && (
-            <Text type="secondary">No recent activity found.</Text>
-          )}
-        </Flex>
-      </div>
     </div>
   );
 };

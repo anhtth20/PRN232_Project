@@ -88,6 +88,13 @@ namespace LibraryManagement.Api.Services
                 .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
             if (author == null) return false;
 
+            // Check if books are linked to this author
+            var holdsBooks = await _context.Books.AnyAsync(b => b.AuthorId == id && !b.IsDeleted);
+            if (holdsBooks)
+            {
+                throw new InvalidOperationException("Cannot delete author because there are still books linked to it.");
+            }
+
             author.IsDeleted = true;
             await _context.SaveChangesAsync();
             return true;
