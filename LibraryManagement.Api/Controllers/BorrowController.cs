@@ -156,5 +156,24 @@ namespace LibraryManagement.Api.Controllers
 
             return Ok(borrow);
         }
+        [HttpPut("{id}/renew")]
+        public async Task<ActionResult<BorrowResponseDto>> RenewBorrow(int id)
+        {
+            try
+            {
+                var borrow = await _borrowService.RenewBorrowAsync(id);
+                if (borrow == null)
+                    return BadRequest(new { message = "Cannot renew this borrow request. Request not found." });
+
+                var userName = User.FindFirstValue(ClaimTypes.Name) ?? "System";
+                await _activityLogService.LogActivityAsync("Renewed Book", borrow.BookTitle ?? "Unknown Book", $"User {borrow.UserId}");
+
+                return Ok(borrow);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

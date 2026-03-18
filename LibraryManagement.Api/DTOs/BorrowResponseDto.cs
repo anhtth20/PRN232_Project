@@ -10,6 +10,7 @@ namespace LibraryManagement.Api.DTOs
         public string? ImageUrl { get; set; }
         public DateTime RequestDate { get; set; }
         public DateTime DueDate { get; set; }
+        public int RenewCount { get; set; }
         public string Status { get; set; } = string.Empty;
     }
 }

@@ -16,6 +16,7 @@ namespace LibraryManagement.Api.Services
         Task<BorrowResponseDto?> CancelBorrowAsync(int borrowId, int? userId = null);
         Task<BorrowResponseDto?> RevertBorrowAsync(int borrowId);
         Task<BookBorrowStatusDto> GetBookBorrowStatusAsync(int userId, int bookId);
+        Task<BorrowResponseDto?> RenewBorrowAsync(int borrowId);
     }
 
     public class BorrowService : IBorrowService
@@ -83,6 +84,7 @@ namespace LibraryManagement.Api.Services
             var borrows = await _context.BorrowRequests
                 .Include(br => br.Book)
                 .ThenInclude(b => b!.Author)
+                .OrderByDescending(br => br.RequestDate)
                 .ToListAsync();
 
             return borrows.Select(b => MapToDto(b)).ToList();
@@ -230,6 +232,31 @@ namespace LibraryManagement.Api.Services
             return await MapToDtoAsync(borrow);
         }
 
+        public async Task<BorrowResponseDto?> RenewBorrowAsync(int borrowId)
+        {
+            var borrow = await _context.BorrowRequests.FindAsync(borrowId);
+            if (borrow == null) return null;
+
+            if (borrow.Status != "Approved")
+            {
+                throw new InvalidOperationException("Only approved borrow requests can be renewed.");
+            }
+
+            if (borrow.RenewCount >= 2)
+            {
+                throw new InvalidOperationException("You have reached the maximum number of renewals (2).");
+            }
+
+            // Extend due date by 14 days from current DueDate
+            borrow.DueDate = borrow.DueDate.AddDays(14);
+            borrow.RenewCount++;
+
+            _context.BorrowRequests.Update(borrow);
+            await _context.SaveChangesAsync();
+
+            return await MapToDtoAsync(borrow);
+        }
+
         private BorrowResponseDto MapToDto(BorrowRequest borrow)
         {
             return new BorrowResponseDto
@@ -242,6 +269,7 @@ namespace LibraryManagement.Api.Services
                 ImageUrl = borrow.Book?.ImageUrl,
                 RequestDate = borrow.RequestDate,
                 DueDate = borrow.DueDate,
+                RenewCount = borrow.RenewCount,
                 Status = borrow.Status
             };
         }
@@ -262,6 +290,7 @@ namespace LibraryManagement.Api.Services
                 ImageUrl = book?.ImageUrl,
                 RequestDate = borrow.RequestDate,
                 DueDate = borrow.DueDate,
+                RenewCount = borrow.RenewCount,
                 Status = borrow.Status
             };
         }

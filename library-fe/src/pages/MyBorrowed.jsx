@@ -12,7 +12,7 @@ import {
   QuestionCircleOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import axios from 'axios';
+import api from '../api';
 import dayjs from 'dayjs';
 import AppImage from '../components/AppImage';
 
@@ -43,9 +43,7 @@ const MyBorrowed = () => {
 
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5237/api/Borrow/my', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/Borrow/my');
       setData(res.data.data || []);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -53,8 +51,6 @@ const MyBorrowed = () => {
       
       if (status === 401) {
         message.error('Session expired. Please log in again.');
-        // Optional: localStorage.removeItem('token'); 
-        // window.location.href = '/login';
       } else {
         const errorMsg = error.response?.data?.message || error.message;
         message.error(`Failed to fetch: ${status ? `Status ${status} - ` : ''}${errorMsg}`);
@@ -98,6 +94,16 @@ const MyBorrowed = () => {
     if (today.isAfter(due)) return <Tag color="error">Overdue</Tag>;
     if (due.diff(today, 'day') <= 3) return <Tag color="warning">Due Soon</Tag>;
     return <Tag color="success">On Time</Tag>;
+  };
+
+  const handleRenew = async (id) => {
+    try {
+      await api.put(`/Borrow/${id}/renew`);
+      message.success('Book renewed successfully');
+      fetchBorrows();
+    } catch (error) {
+      message.error(error.response?.data?.message || 'Failed to renew book');
+    }
   };
 
   const columns = [
@@ -158,10 +164,19 @@ const MyBorrowed = () => {
       render: (_, record) => {
         if (record.status === 'Approved') {
           const isOverdue = dayjs().isAfter(dayjs(record.dueDate));
+          const canRenew = record.renewCount < 2;
           return isOverdue ? (
             <Button type="primary" danger size="small">Pay Fine</Button>
           ) : (
-            <Button type="link" size="small" style={{ padding: 0 }}>Renew</Button>
+            <Button 
+              type="link" 
+              size="small" 
+              style={{ padding: 0 }}
+              onClick={() => handleRenew(record.id)}
+              disabled={!canRenew}
+            >
+              Renew {record.renewCount > 0 && `(${record.renewCount})`}
+            </Button>
           );
         }
         return null;

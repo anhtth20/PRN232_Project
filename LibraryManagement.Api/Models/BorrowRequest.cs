@@ -7,6 +7,7 @@ namespace LibraryManagement.Api.Models
         public int BookId { get; set; }
         public DateTime RequestDate { get; set; }
         public DateTime DueDate { get; set; }
+        public int RenewCount { get; set; } = 0;
         public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Returned
 
         // Foreign keys
