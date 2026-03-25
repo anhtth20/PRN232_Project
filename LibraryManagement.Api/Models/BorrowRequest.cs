@@ -8,7 +8,7 @@ namespace LibraryManagement.Api.Models
         public DateTime RequestDate { get; set; }
         public DateTime DueDate { get; set; }
         public int RenewCount { get; set; } = 0;
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Returned
+        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Returned, Cancelled
 
         // Foreign keys
         public User? User { get; set; }

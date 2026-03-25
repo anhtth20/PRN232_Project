@@ -171,19 +171,12 @@ namespace LibraryManagement.Api.Services
                 return null; // Unauthorized
             }
 
-            if (borrow.Status == "Pending")
-            {
-                borrow.Status = "Cancelled";
-            }
-            else if (borrow.Status == "Approved")
-            {
-                borrow.Status = "Cancelled";
-                borrow.Book!.ReturnBook();
-            }
-            else
+            if (borrow.Status != "Pending")
             {
                 return null;
             }
+
+            borrow.Status = "Cancelled";
 
             _context.BorrowRequests.Update(borrow);
             if (borrow.Book != null)

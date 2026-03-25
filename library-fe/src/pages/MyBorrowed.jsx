@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, Table, Tabs, Card, Statistic, Tag, Button, 
-  Space, Row, Col, Input, Pagination, App, Flex, Avatar, Badge, Skeleton
+  Space, Row, Col, Input, Pagination, App, Flex, Avatar, Badge, Skeleton, Popconfirm
 } from 'antd';
 import {
   BookOutlined,
@@ -62,7 +62,7 @@ const MyBorrowed = () => {
 
   const filteredData = data.filter(item => {
     if (activeTab === 'Current') return item.status === 'Approved' || item.status === 'Pending';
-    if (activeTab === 'Past Borrows') return item.status === 'Returned' || item.status === 'Rejected';
+    if (activeTab === 'Past Borrows') return item.status === 'Returned' || item.status === 'Rejected' || item.status === 'Cancelled';
     return true;
   });
 
@@ -90,6 +90,7 @@ const MyBorrowed = () => {
     if (item.status === 'Returned') return <Tag color="default">Returned</Tag>;
     if (item.status === 'Rejected') return <Tag color="error">Rejected</Tag>;
     if (item.status === 'Pending') return <Tag color="warning">Pending Approval</Tag>;
+    if (item.status === 'Cancelled') return <Tag color="default">Cancelled</Tag>;
     
     if (today.isAfter(due)) return <Tag color="error">Overdue</Tag>;
     if (due.diff(today, 'day') <= 3) return <Tag color="warning">Due Soon</Tag>;
@@ -103,6 +104,16 @@ const MyBorrowed = () => {
       fetchBorrows();
     } catch (error) {
       message.error(error.response?.data?.message || 'Failed to renew book');
+    }
+  };
+
+  const handleCancel = async (id) => {
+    try {
+      await api.put(`/Borrow/${id}/cancel`);
+      message.success('Request cancelled successfully');
+      fetchBorrows();
+    } catch (error) {
+      message.error(error.response?.data?.message || 'Failed to cancel request');
     }
   };
 
@@ -179,6 +190,27 @@ const MyBorrowed = () => {
             </Button>
           );
         }
+        
+        if (record.status === 'Pending') {
+          return (
+            <Popconfirm
+              title="Are you sure you want to cancel this request?"
+              onConfirm={() => handleCancel(record.id)}
+              okText="Yes"
+              cancelText="No"
+              placement="topRight"
+            >
+              <Button 
+                type="primary" 
+                danger 
+                size="small"
+              >
+                Cancel
+              </Button>
+            </Popconfirm>
+          );
+        }
+        
         return null;
       },
     },

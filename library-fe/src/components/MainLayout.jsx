@@ -11,7 +11,7 @@ import {
 const { Header, Content, Footer } = Layout;
 const { Text } = Typography;
 
-const MainLayout = ({ children, user, onLogout, onSearch }) => {
+const MainLayout = ({ children, user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
 

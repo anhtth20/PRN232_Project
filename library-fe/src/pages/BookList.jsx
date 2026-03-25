@@ -160,7 +160,7 @@ const BookList = ({ onBookClick, externalSearch }) => {
                 onSelect={handleMenuSelect}
                 style={{ border: 'none' }}
               />
-              <div style={{ margin: '16px 12px 4px' }}>
+              {/* <div style={{ margin: '16px 12px 4px' }}>
                 <Alert
                   type="info"
                   showIcon
@@ -168,7 +168,7 @@ const BookList = ({ onBookClick, externalSearch }) => {
                   description="You can borrow up to 5 books at a time. Return them within 14 days to avoid fines!"
                   style={{ borderRadius: 10 }}
                 />
-              </div>
+              </div> */}
             </Card>
           </Col>
 
@@ -227,7 +227,7 @@ const BookList = ({ onBookClick, externalSearch }) => {
                         onClick={(e) => { e.stopPropagation(); }}
                         style={{ borderRadius: 8, fontWeight: 600 }}
                       >
-                        {book.availableQuantity > 0 ? 'Borrow' : 'Waitlist'}
+                        {'View Details'}
                       </Button>
                     </Card>
                   </Col>
